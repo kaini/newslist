@@ -88,6 +88,7 @@ function source_changed() {
 	if (enabled) {
 		console.log("Adding source " + source_id)
 		fetch_source(source_id)
+		localStorage.setItem("source-" + source_id, "1")
 	} else {
 		console.log("Removing source " + source_id)
 		if (GLOBAL.xhrs[source_id]) {
@@ -96,7 +97,9 @@ function source_changed() {
 		}
 		delete GLOBAL.items[source_id]
 		refresh_news_display()
+		localStorage.removeItem("source-" + source_id)
 	}
+
 }
 
 function fetch_sources() {
@@ -114,6 +117,10 @@ function fetch_sources() {
 				                        .attr("id", "source-" + this.id)
 				                        .attr("data-source-id", this.id)
 				                        .change(source_changed)
+				if (localStorage.getItem("source-" + this.id)) {
+					input.attr("checked", "checked")
+					input.change()
+				}
 				var label = $("<label>").text(this.name)
 				                        .attr("for", "source-" + this.id)
 				var li = $("<li>").append(input)
