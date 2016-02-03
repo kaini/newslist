@@ -146,3 +146,8 @@ body > h1 {
 	margin-top: 0.25rem;
 	margin-left: 1rem;
 }
+
+.config .icon-close, .config .icon-open {
+	display: inline-block;
+	width: 1.2rem;
+}
