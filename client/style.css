@@ -5,7 +5,7 @@ html, body {
 	background-color: #fff;
 }
 
-h1 {
+body > h1 {
 	font-size: 3rem;
 	text-align: center;
 	margin-top: 1rem;
@@ -133,7 +133,7 @@ h1 {
 	padding: 0.5rem;
 }
 
-.config h2 a {
+.config h1 a {
 	color: #aaa;
 	text-decoration: none;
 }

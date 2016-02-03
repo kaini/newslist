@@ -1,6 +1,6 @@
 "use strict"
 
-var API = "//localhost:5555"
+var API = "_data"
 var GLOBAL = {
 	items: {},
 	sources: {},
@@ -19,7 +19,7 @@ function set_image_class() {
 }
 
 function make_item_box(item, source) {
-	var image = $("<img>").attr("src", item.image || "icons/" + source.id + ".png")
+	var image = $("<img>").attr("src", item.image ? API + "/" + item.image + ".png" : "icons/" + source.id + ".png")
 		                  .attr("alt", item.image ? item.title : source.name)
 		                  .attr("class", item.image ? "article-image" : "article-image-dummy")
 		                  .on("load", set_image_class)
@@ -43,8 +43,7 @@ function make_item_box(item, source) {
 	                        .append(header)
 	                        .append(summary)
 
-	var article = $("<article>").attr("id", "item-" + item.id)
-	                            .attr("lang", source.lang)
+	var article = $("<article>").attr("lang", source.lang)
 	                            .append(imagebox)
 	                            .append(content)
 	return article
@@ -97,7 +96,7 @@ function source_changed() {
 }
 
 function fetch_sources() {
-	$.get(API + "/sources/")
+	$.get(API + "/sources.json")
 		.done(function(result) {
 			var ul = $("#sources")
 			ul.empty()
@@ -112,14 +111,15 @@ function fetch_sources() {
 				                  .append(label)
 				ul.append(li)
 				GLOBAL.sources[this.id] = this
+				// TODO sort
 			})
 		})
 }
 
 function fetch_source(source_id) {
-	var xhr = $.get(API + "/sources/" + source_id + "/items/")
+	var xhr = $.get(API + "/source_" + source_id + ".json")
 		.done(function(result) {
-			GLOBAL.items[source_id] = result.items
+			GLOBAL.items[source_id] = result
 			// TODO last update
 			refresh_news_display()
 		})

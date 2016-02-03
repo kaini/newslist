@@ -1,22 +1,32 @@
 from bs4 import BeautifulSoup, NavigableString
 from urllib.parse import urljoin
-import hashlib
+from hashlib import sha1
 
 
 def _make_id(source_id, url):
-    return hashlib.sha1((source_id + url).encode("utf-8")).hexdigest()
+    return sha1((source_id + url).encode("utf-8")).hexdigest()
 
 
 class NewsItem:
-    def __init__(self, id, title, summary, image, url):
+    def __init__(self, id, title, summary, image_url, url):
         self.id = id
         self.title = title
         self.summary = summary
-        self.image = image
+        self.image_url = image_url
+        if image_url:
+            self.image_hash = sha1(image_url.encode("utf-8")).hexdigest()
+        else:
+            self.image_hash = None
         self.url = url
 
     def json_dict(self):
-        return self.__dict__
+        return {
+            "id": self.id,
+            "title": self.title,
+            "summary": self.summary,
+            "image": self.image_hash,
+            "url": self.url,
+        }
 
 
 class NewsSource:
@@ -92,9 +102,10 @@ class DerStandardNewsSorce(NewsSource):
 
         title = soup.h1.text.strip()
 
-        summary = soup.select_one("#content-main h2").get_text().strip()
+        summary = soup.select_one("#content-main h2, "
+                                  "div.copytext h3").get_text().strip()
 
-        image = soup.select_one("#objectContent img.photo")
+        image = soup.select_one("#objectContent img")
         if image:
             image = urljoin(self.base_url, image.get("src"))
         else:
@@ -108,4 +119,4 @@ def _make_sources():
     yield DerStandardNewsSorce()
 
 
-NEWS_SOURCES = dict((s.id, s) for s in _make_sources())
+NEWS_SOURCES = tuple(_make_sources())

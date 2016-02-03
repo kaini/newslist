@@ -1,163 +1,121 @@
-import sqlite3
 import requests
-import fcntl
-import threading
-import io
-import dateutil.parser
-from datetime import datetime, timedelta
-from newslist.sources import NewsItem
+import os
+import traceback
+import sys
+import json
+import pickle
+from newslist.sources import NEWS_SOURCES
+from PIL import Image
+from io import BytesIO
 
 
-DB_VERSION = 3
-UPDATE_INTERVAL = timedelta(minutes=10)
+class _MyJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, "json_dict"):
+            return obj.json_dict()
+        else:
+            return super(_MyJSONEncoder, self).default(obj)
 
 
-def init(path):
-    conn = sqlite3.connect(path)
+def _commit(repo, file, data):
+    path = os.path.join(repo, file)
+    with open(path + ".new", "wb") as fp:
+        fp.write(json.dumps(data, cls=_MyJSONEncoder).encode("utf-8"))
+    os.replace(path + ".new", path)
+
+
+def _exists(repo, file):
+    return os.path.exists(os.path.join(repo, file))
+
+
+def fetch(repo):
+    cache = {}
     try:
-        c = conn.cursor()
+        with open(os.path.join(repo, "cache"), "rb") as fp:
+            cache = pickle.load(fp)
+    except Exception:
+        print("No cache.")
 
-        try:
-            c.execute("""select * from "version";""")
-            if c.fetchone() == (DB_VERSION,):
-                print("Database is already initialized.")
-                return
-            else:
-                print("You have to delete the database.")
-                raise Exception("You have to delete the database.")
-        except sqlite3.Error:
-            pass
-        print("Initializing database.")
+    print(">>> Fetch into " + repo + " ...")
+    for source in NEWS_SOURCES:
+        fetch_source(repo, source, cache)
 
-        c.execute("""create table "items" (
-                         "id" varchar primary key,
-                         "source_id" varchar,
-                         "title" varchar,
-                         "summary" varchar,
-                         "image" varchar,
-                         "url" varchar
-                     );""")
-        c.execute("""create table "errors" (
-                         "id" integer primary key,
-                         "source_id" varchar,
-                         "url" varchar,
-                         "error" varchar
-                     );""")
-        c.execute("""create table "last_updates" (
-                         "source_id" varchar primary key,
-                         "time" timestamp
-                     );""")
-        c.execute("""create table "version" (
-                         "version" integer primary key
-                     );""")
-        c.execute("""insert into "version" values (?);""", (DB_VERSION,))
-        conn.commit()
-    finally:
-        conn.rollback()
-        conn.close()
+    _commit(repo, "sources.json", NEWS_SOURCES)
+
+    with open(os.path.join(repo, "cache"), "wb") as fp:
+        pickle.dump(cache, fp, pickle.HIGHEST_PROTOCOL)
+
+    cleanup(repo)
 
 
-def _fetch_items_background(db_path, source):
-    def run():
-        lockfile = "/tmp/newslist-lock-" + source.id
-        handle = None
-        db = None
-        try:
-            # Check for lock
-            handle = open(lockfile, "w")
-            error = fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            if error:
-                print("Someone already refreshes " + source + ".")
-                return
+def fetch_source(repo, source, cache):
+    cache_key = "source-" + source.id
+    if cache_key not in cache:
+        cache[cache_key] = {}
+    mycache = cache[cache_key]
 
-            # Results
-            items = []
-            errors = {}
+    print(">>> Fetching " + source.id + " ...")
 
-            # Get item urls
-            try:
-                print("GET " + source.base_url)
-                r = requests.get(source.base_url)
-                if r.status_code != 200:
-                    raise Exception("HTTP " + r.status_code)
-                article_urls = source.get_articles(r.text)
-            except Exception as ex:
-                errors[source.base_url] = str(ex)
-                article_urls = []
+    article_urls = []
+    try:
+        print("GET INDEX " + source.base_url + " ...")
+        article_urls = fetch_articles(source)
+        print("\tgot " + str(len(article_urls)) + ".")
+    except Exception:
+        print(source.base_url, file=sys.stderr)
+        traceback.print_exc()
+        return
 
-            # Get items
-            for url in article_urls:
-                try:
-                    print("GET " + url)
-                    r = requests.get(url)
-                    if r.status_code != 200:
-                        raise Exception("HTTP " + r.status_code)
-                    items.append(source.get_article(r.text, url))
-                except Exception as ex:
-                    errors[url] = str(ex)
-
-            # Write results
-            db = sqlite3.connect(db_path)
-            c = db.cursor()
-            c.execute("""delete from "items" where "source_id"=?;""",
-                      (source.id,))
-            c.execute("""delete from "errors" where "source_id"=?;""",
-                      (source.id,))
-            c.execute("""delete from "last_updates" where "source_id"=?;""",
-                      (source.id,))
-            for item in items:
-                c.execute("""insert into "items" values (?,?,?,?,?,?);""",
-                          (item.id, source.id, item.title, item.summary,
-                           item.image, item.url))
-            for url, error in errors.items():
-                c.execute("""insert into "errors" values (?,?,?,?);""",
-                          (None, source.id, url, error))
-            c.execute("""insert into "last_updates" values (?,?);""",
-                      (source.id, datetime.utcnow().isoformat()))
-            db.commit()
-        except io.BlockingIOError as ex:
-            pass
-        finally:
-            if handle:
-                fcntl.flock(handle, fcntl.LOCK_UN)
-                handle.close()
-            if db:
-                db.rollback()
-                db.close()
-
-    t = threading.Thread(target=run)
-    t.start()
-
-
-def items(db, db_path, source):
-    c = db.cursor()
-
-    c.execute("""select * from "last_updates" where "source_id" = ?;""",
-              (source.id,))
-    last_update = c.fetchone()
-    if last_update:
-        last_update = dateutil.parser.parse(last_update[1])
-    else:
-        last_update = datetime.fromtimestamp(0)
-    if datetime.utcnow() - last_update >= UPDATE_INTERVAL:
-        _fetch_items_background(db_path, source)
-
-    c.execute("""select "id", "title", "summary", "image", "url"
-                 from "items"
-                 where "source_id" = ?;""",
-              (source.id,))
     items = []
-    for row in c:
-        items.append(NewsItem(*row))
+    for article_url in article_urls:
+        try:
+            if article_url not in mycache:
+                print("GET ARTICLE " + article_url + " ...")
+                item = fetch_article(source, article_url)
+            else:
+                print("[CACHED] GET ARTICLE " + article_url + " ...")
+                item = mycache[article_url]
+            items.append(item)
 
-    return items, last_update
+            if item.image_url:
+                if not _exists(repo, item.image_hash + ".png"):
+                    print("GET IMAGE " + item.image_url)
+                    fetch_image(repo, item.image_url, item.image_hash)
+                else:
+                    print("[CACHED] GET IMAGE " + item.image_url)
+        except Exception:
+            print(article_url, file=sys.stderr)
+            traceback.print_exc()
+
+    _commit(repo, "source_" + source.id + ".json", items)
+    cache[cache_key] = dict((i.url, i) for i in items)
 
 
-def errors(db, source):
-    c = db.cursor()
+def fetch_articles(source):
+    r = requests.get(source.base_url)
+    if r.status_code != 200:
+        raise Exception("HTTP " + r.status_code)
+    article_urls = source.get_articles(r.text)
+    return article_urls
 
-    c.execute("""select "url", "error"
-                 from "errors"
-                 where "source_id" = ?;""",
-              (source.id,))
-    return dict(c)
+
+def fetch_article(source, article_url):
+    r = requests.get(article_url)
+    if r.status_code != 200:
+        raise Exception("HTTP " + r.status_code)
+    return source.get_article(r.text, article_url)
+
+
+def fetch_image(repo, url, target):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return
+    try:
+        i = Image.open(BytesIO(r.content))
+        i.save(os.path.join(repo, target + ".png"))
+    except Exception:
+        pass
+
+
+def cleanup(repo):
+    pass  # TODO

@@ -69,7 +69,7 @@ Vagrant.configure(2) do |config|
     sudo apt-get update
     sudo apt-get dist-upgrade -y
     
-    sudo apt-get install -y python3-pip sqlite3
+    sudo apt-get install -y python3-pip sqlite3 libjpeg-dev zlib1g-dev
     sudo pip3 install ipython
     sudo pip3 install -r /vagrant/server/requirements.txt
   SHELL
