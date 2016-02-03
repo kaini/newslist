@@ -44,6 +44,7 @@ function make_item_box(item, source) {
 	                        .append(summary)
 
 	var article = $("<article>").attr("lang", source.lang)
+	                            .attr("id", "article-" + item.id)
 	                            .append(imagebox)
 	                            .append(content)
 	return article
@@ -60,25 +61,40 @@ function refresh_news_display() {
 		return (akey < bkey ? -1 : (akey > bkey ? 1 : 0))
 	})
 
-	var item_count = 0
 	var i = 0
 	var has_hit = false
-	var items_box = $("#items")
-	items_box.empty()
+	var insert_anchor = $("#anchor")
+	$("#items article").attr("data-delete", "data-delete")
 	do {
 		has_hit = false
 		for (var k = 0; k < keys.length; ++k) {
 			var item = GLOBAL.items[keys[k]][i]
 			if (item) {
 				has_hit = true
-				++item_count
-				var box = make_item_box(item, GLOBAL.sources[keys[k]])
-				items_box.append(box)
+
+				var box = $("#article-" + item.id)
+				if (!box.length) {
+					box = make_item_box(item, GLOBAL.sources[keys[k]])
+				} else {
+					box.attr("data-delete", null)
+				}
+				insert_anchor.before(box)
 			}
 		}
 		++i
 	} while (has_hit)
-	items_box.append($("<div>").attr("class", "clearfix"))
+
+	$("#items article[data-delete]").remove()
+
+	$("#lastupdate").text(new Date().toLocaleString(
+		window.navigator.userLanguage || window.navigator.language, {
+		weekday: "long",
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+		hour: "numeric",
+		minute: "numeric",
+	}))
 }
 
 function source_changed() {
@@ -99,7 +115,6 @@ function source_changed() {
 		refresh_news_display()
 		localStorage.removeItem("source-" + source_id)
 	}
-
 }
 
 function fetch_sources() {
@@ -135,7 +150,6 @@ function fetch_source(source_id) {
 	var xhr = $.get(API + "/source_" + source_id + ".json")
 		.done(function(result) {
 			GLOBAL.items[source_id] = result
-			// TODO last update
 			refresh_news_display()
 		})
 		.always(function() {
@@ -158,13 +172,17 @@ function sources_toggle(open) {
 
 $(document).ready(function() {
 	fetch_sources()
+	window.setInterval(function() {
+		console.log("Update")
+		fetch_sources()
+	}, 61000)
 
 	var sources_open = false
 	sources_toggle(false)
 	$("#sources-button").click(function() {
 		sources_open = !sources_open
 		sources_toggle(sources_open)
-	})	
+	})
 })
 
 $(document).ajaxError(function() {
