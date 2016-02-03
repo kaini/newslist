@@ -54,7 +54,11 @@ function refresh_news_display() {
 	for (var key in GLOBAL.items) {
 		keys.push(key)
 	}
-	// TODO sort?
+	keys.sort(function(a, b) {
+		var akey = GLOBAL.sources[a].name.toLowerCase()
+		var bkey = GLOBAL.sources[b].name.toLowerCase()
+		return (akey < bkey ? -1 : (akey > bkey ? 1 : 0))
+	})
 
 	var item_count = 0
 	var i = 0
@@ -100,6 +104,11 @@ function fetch_sources() {
 		.done(function(result) {
 			var ul = $("#sources")
 			ul.empty()
+			result.sort(function(a, b) {
+				var akey = a.name.toLowerCase()
+				var bkey = b.name.toLowerCase()
+				return (akey < bkey ? -1 : (akey > bkey ? 1 : 0))
+			})
 			$(result).each(function() {
 				var input = $("<input>").attr("type", "checkbox")
 				                        .attr("id", "source-" + this.id)
@@ -111,7 +120,6 @@ function fetch_sources() {
 				                  .append(label)
 				ul.append(li)
 				GLOBAL.sources[this.id] = this
-				// TODO sort
 			})
 		})
 }
@@ -143,7 +151,6 @@ function sources_toggle(open) {
 
 $(document).ready(function() {
 	fetch_sources()
-	// TODO set interval for sources if fail??
 
 	var sources_open = false
 	sources_toggle(false)
@@ -155,4 +162,5 @@ $(document).ready(function() {
 
 $(document).ajaxError(function() {
 	console.error("AJAX Fail!")
+	// TODO ??
 })
