@@ -128,6 +128,15 @@ class TestSources(unittest.TestCase):
         self.assertEqual(result.image_url, "http://images.derstandard.at/t/E716/2016/02/01/Wien--3-Stunden-Polaroid-Fototour-durch-die-Stadt.jpg")
         self.assertRegex(result.summary, "^Als der.*sst. .red, 3.2.2016.$")
 
+    def test_get_article_derstandard_live(self):
+        with open("newslist/fixtures/derstandard_article_live.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = DerStandardNewsSorce().get_article(source, "")
+
+        self.assertEqual(result.title, "Heute Abend: Wir schauen Opernball!")
+        self.assertIsNone(result.image_url)
+        self.assertRegex(result.summary, "^Sehen und.*Sie durch den Abend$")
+
     def test_get_articles_diepresse(self):
         with open("newslist/fixtures/diepresse_index.html", "r", encoding="utf-8") as fp:
             source = fp.read()

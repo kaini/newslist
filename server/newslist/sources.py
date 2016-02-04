@@ -75,7 +75,7 @@ class LeMondeNewsSource(NewsSource):
             if not isinstance(child, NavigableString) and \
                (child.name.startswith("h") or child.name == "p"):
                 summary = child.get_text().strip()
-                if summary and summary != "Reportage":
+                if summary and summary not in ("Reportage", "En images"):
                     break
 
         image = soup.select_one("#articleBody img, "
@@ -121,11 +121,14 @@ class DerStandardNewsSorce(NewsSource):
                                   "#objectContent .copytext p") \
                       .get_text().strip()
 
-        image = soup.select_one("#objectContent img")
-        if image:
-            image = urljoin(self.base_url, image.get("src"))
-        else:
+        if soup.select_one(".liveticker"):
             image = None
+        else:
+            image = soup.select_one("#objectContent img")
+            if image:
+                image = urljoin(self.base_url, image.get("src"))
+            else:
+                image = None
 
         return NewsItem(title, summary, image, url)
 
