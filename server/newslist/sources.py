@@ -103,9 +103,12 @@ class DerStandardNewsSorce(NewsSource):
 
     def get_articles(self, source):
         soup = BeautifulSoup(source, "html5lib")
+        elems = soup.find_all(True)
+        links = soup.select("#mainContent h2 a, #mainContent h3 a")
+        links.sort(key=elems.index)
         return [urljoin(self.base_url, link.get("href"))
                 for link
-                in soup.select("#mainContent h2 a, #mainContent h3 a")
+                in links
                 if not link.get("href").startswith("/r")]
 
     def get_article(self, source, url):

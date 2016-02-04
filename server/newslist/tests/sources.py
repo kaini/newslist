@@ -87,9 +87,9 @@ class TestSources(unittest.TestCase):
 
         self.assertEqual(len(result), 24)
         self.assertEqual(result[0], "http://derstandard.at/2000030158047/Grossbritannien-erlaubt-Genmanipulation-von-Embryonen")
-        self.assertEqual(result[3], "http://derstandard.at/2000030115353/Maedchen-bei-Zentralmatura-in-Englisch-unerwartet-schlecht")
-        self.assertEqual(result[5], "http://derstandard.at/2000030111049/Biogasanlagen-die-auch-Kompost-abwerfen")
-        self.assertEqual(result[8], "http://derstandard.at/2000030113319/Matthias-Franz-Stein-Alle-Eltern-haben-ein-schlechtes-Gewissen")
+        self.assertEqual(result[2], "http://derstandard.at/2000030115353/Maedchen-bei-Zentralmatura-in-Englisch-unerwartet-schlecht")
+        self.assertEqual(result[4], "http://derstandard.at/2000030111049/Biogasanlagen-die-auch-Kompost-abwerfen")
+        self.assertEqual(result[7], "http://derstandard.at/2000030113319/Matthias-Franz-Stein-Alle-Eltern-haben-ein-schlechtes-Gewissen")
         self.assertEqual(result[23], "http://derstandard.at/2000029871110/Ernaehrung-Oesterreich-kommt-relativ-gut-wer")
 
     def test_get_article_derstandard_normal(self):
