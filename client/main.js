@@ -127,7 +127,7 @@ function source_changed() {
 }
 
 function fetch_sources() {
-	$.get(API + "/sources.json")
+	$.get({url: API + "/sources.json", cache: false})
 		.done(function(result) {
 			var ul = $("#sources")
 			ul.empty()
@@ -156,7 +156,7 @@ function fetch_sources() {
 }
 
 function fetch_source(source_id) {
-	var xhr = $.get(API + "/source_" + source_id + ".json")
+	var xhr = $.get({url: API + "/source_" + source_id + ".json", cache: false})
 		.done(function(result) {
 			GLOBAL.items[source_id] = result
 			refresh_news_display()
