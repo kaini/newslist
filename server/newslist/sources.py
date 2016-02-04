@@ -105,7 +105,8 @@ class DerStandardNewsSorce(NewsSource):
         soup = BeautifulSoup(source, "html5lib")
         return [urljoin(self.base_url, link.get("href"))
                 for link
-                in soup.select("#mainContent h2 a, #mainContent h3 a")]
+                in soup.select("#mainContent h2 a, #mainContent h3 a")
+                if not link.get("href").startswith("/r")]
 
     def get_article(self, source, url):
         soup = BeautifulSoup(source, "html5lib")
@@ -113,7 +114,9 @@ class DerStandardNewsSorce(NewsSource):
         title = soup.h1.text.strip()
 
         summary = soup.select_one("#content-main h2, "
-                                  "div.copytext h3").get_text().strip()
+                                  "div.copytext h3, "
+                                  "#objectContent .copytext p") \
+                      .get_text().strip()
 
         image = soup.select_one("#objectContent img")
         if image:

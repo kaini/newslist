@@ -108,3 +108,21 @@ class TestSources(unittest.TestCase):
         self.assertEqual(result.title, "Das Zika-Virus: Seit 70 Jahren kaum bekannt")
         self.assertEqual(result.image_url, "http://images.derstandard.at/2016/02/03/zika_1.jpg")
         self.assertRegex(result.summary, "^Die von.*epidemisch aus$")
+
+    def test_get_article_derstandard_ansichtssache(self):
+        with open("newslist/fixtures/derstandard_article_ansichtssache.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = DerStandardNewsSorce().get_article(source, "")
+
+        self.assertEqual(result.title, "Renault: RS16-Enthüllung in Paris")
+        self.assertEqual(result.image_url, "http://images.derstandard.at/2016/02/03/a.jpg")
+        self.assertRegex(result.summary, "^Neu formierter.*die Saison$")
+
+    def test_get_article_derstandard_slides(self):
+        with open("newslist/fixtures/derstandard_article_slides.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = DerStandardNewsSorce().get_article(source, "")
+
+        self.assertEqual(result.title, "Zum 90er der Spraydose: Die schönsten Streetart-Touren")
+        self.assertEqual(result.image_url, "http://images.derstandard.at/t/E716/2016/02/01/Wien--3-Stunden-Polaroid-Fototour-durch-die-Stadt.jpg")
+        self.assertRegex(result.summary, "^Als der.*sst. .red, 3.2.2016.$")
