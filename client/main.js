@@ -62,23 +62,32 @@ function refresh_news_display() {
 	})
 
 	var i = 0
-	var has_hit = false
 	var insert_anchor = $("#anchor")
 	$("#items article").attr("data-delete", "data-delete")
 	do {
-		has_hit = false
+		var has_hit = false
+		var retry = 0
 		for (var k = 0; k < keys.length; ++k) {
-			var item = GLOBAL.items[keys[k]][i]
+			var item = GLOBAL.items[keys[k]][i + retry]
 			if (item) {
 				has_hit = true
 
 				var box = $("#article-" + item.id)
-				if (!box.length) {
-					box = make_item_box(item, GLOBAL.sources[keys[k]])
-				} else {
+				if (box.length && !box.attr("data-delete")) {
+					// article already in DOM because item is a duplicate
+					// retry with next article
+					--k
+					++retry
+					continue
+				} else if (box.length) {
+					// article already in DOM
 					box.attr("data-delete", null)
+				} else {
+					// article not added yet
+					box = make_item_box(item, GLOBAL.sources[keys[k]])
 				}
 				insert_anchor.before(box)
+				retry = 0
 			}
 		}
 		++i

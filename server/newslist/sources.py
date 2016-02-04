@@ -3,13 +3,9 @@ from urllib.parse import urljoin
 from hashlib import sha1
 
 
-def _make_id(source_id, url):
-    return sha1((source_id + url).encode("utf-8")).hexdigest()
-
-
 class NewsItem:
-    def __init__(self, id, title, summary, image_url, url):
-        self.id = id
+    def __init__(self, title, summary, image_url, url):
+        self.id = sha1(url.encode("utf-8")).hexdigest()
         self.title = title
         self.summary = summary
         self.image_url = image_url
@@ -82,7 +78,7 @@ class LeMondeNewsSource(NewsSource):
         else:
             image = None
 
-        return NewsItem(_make_id(self.id, url), title, summary, image, url)
+        return NewsItem(title, summary, image, url)
 
 
 class DerStandardNewsSorce(NewsSource):
@@ -111,7 +107,7 @@ class DerStandardNewsSorce(NewsSource):
         else:
             image = None
 
-        return NewsItem(_make_id(self.id, url), title, summary, image, url)
+        return NewsItem(title, summary, image, url)
 
 
 def _make_sources():
