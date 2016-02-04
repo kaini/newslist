@@ -127,6 +127,53 @@ class DerStandardNewsSorce(NewsSource):
         return NewsItem(title, summary, image, url)
 
 
+class DiePresseNewsSource(NewsSource):
+    def __init__(self):
+        super(DiePresseNewsSource, self).__init__(
+            "diepresse",
+            "http://diepresse.com/",
+            "DiePresse.com",
+            "de")
+
+    def get_articles(self, source):
+        soup = BeautifulSoup(source, "html5lib")
+        elems = soup.find_all(True)
+        links = soup.select("#maincontent h2 a, #content h3 a")
+        links.sort(key=elems.index)
+        links = (urljoin(self.base_url, link.get("href"))
+                 for link
+                 in links)
+        links = ((link[:link.find("?")] if "?" in link else link)
+                 for link
+                 in links)
+        return list(links)
+
+    def get_article(self, source, url):
+        soup = BeautifulSoup(source, "html5lib")
+
+        title = soup.select_one("#maincontent h1").get_text().strip()
+
+        summary = soup.select_one(".articlelead, .diatext")
+        if not summary:
+            summary = soup.select(".pictext")[1]
+            for child in summary.children:
+                if not isinstance(child, NavigableString) and \
+                   child.name == "p" and child.get_text().strip():
+                    summary = child
+                    break
+        summary = summary.get_text().strip()
+
+        image = soup.select_one("img.articleimg, "
+                                ".gallery_preview img, "
+                                ".picfield img")
+        if image:
+            image = urljoin(self.base_url, image.get("src"))
+        else:
+            image = None
+
+        return NewsItem(title, summary, image, url)
+
+
 def _make_sources():
     yield LeMondeNewsSource()
     yield DerStandardNewsSorce()
@@ -135,6 +182,7 @@ def _make_sources():
                     "Bildung", "Reisen", "Lifestyle", "Familie"):
         yield DerStandardNewsSorce(url="http://derstandard.at/" + ressort,
                                    suffix=": " + ressort)
+    yield DiePresseNewsSource()
 
 
 NEWS_SOURCES = tuple(_make_sources())

@@ -1,4 +1,5 @@
-from newslist.sources import LeMondeNewsSource, DerStandardNewsSorce
+from newslist.sources import LeMondeNewsSource, DerStandardNewsSorce, \
+                             DiePresseNewsSource
 import unittest
 
 
@@ -126,3 +127,43 @@ class TestSources(unittest.TestCase):
         self.assertEqual(result.title, "Zum 90er der Spraydose: Die schönsten Streetart-Touren")
         self.assertEqual(result.image_url, "http://images.derstandard.at/t/E716/2016/02/01/Wien--3-Stunden-Polaroid-Fototour-durch-die-Stadt.jpg")
         self.assertRegex(result.summary, "^Als der.*sst. .red, 3.2.2016.$")
+
+    def test_get_articles_diepresse(self):
+        with open("newslist/fixtures/diepresse_index.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = DiePresseNewsSource().get_articles(source)
+
+        self.assertEqual(len(result), 35)
+        self.assertEqual(result[0], "http://diepresse.com/home/wirtschaft/economist/4918610/EU-prophezeit-Osterreich-noch-mehr-Arbeitslose")
+        self.assertEqual(result[1], "http://diepresse.com/home/politik/aussenpolitik/4918522/Islamisten-planten-offenbar-Anschlag-am-Alexanderplatz")
+        self.assertEqual(result[3], "http://diepresse.com/home/wirtschaft/economist/4918807/Glucksspiel_CasinosBieter-wollen-Krieg-beenden")
+        self.assertEqual(result[5], "http://diepresse.com/home/politik/innenpolitik/4918547/RathgeberProzess_Mir-sind-in-der-Zeitnot-Fehler-passiert")
+        self.assertEqual(result[8], "http://diepresse.com/home/meinung/kommentare/leitartikel/4918278/Die-Feinde-des-Bargelds-sind-auf-dem-falschen-Dampfer")
+        self.assertEqual(result[34], "http://diepresse.com/home/panorama/welt/105316/Blickfang_Die-besten-Bilder-aus-aller-Welt")
+
+    def test_get_article_diepresse_normal(self):
+        with open("newslist/fixtures/diepresse_article_normal.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = DiePresseNewsSource().get_article(source, "")
+
+        self.assertRegex(result.title, "^EU prophezeit.*mehr Arbeitslose$")
+        self.assertEqual(result.image_url, "http://static.diepresse.com/images/uploads_580/d/5/2/4918610/533027A3-1218-4234-A7E4-54A31637CF0C_v0_h.jpg")
+        self.assertRegex(result.summary, "^Laut EU-Winterprognose.*Arbeitslosenrate.$")
+
+    def test_get_article_diepresse_galerie(self):
+        with open("newslist/fixtures/diepresse_article_galerie.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = DiePresseNewsSource().get_article(source, "")
+
+        self.assertEqual(result.title, "ZTE Blade V6: Ein iPhone mit Haken")
+        self.assertEqual(result.image_url, "http://static.diepresse.com/images/uploads_564/b/a/6/4918182/2_1454512771965620.jpg")
+        self.assertRegex(result.summary, "^Sieht aus wie.*gro.en Haken.$")
+    
+    def test_get_article_diepresse_galerie2(self):
+        with open("newslist/fixtures/diepresse_article_galerie2.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = DiePresseNewsSource().get_article(source, "")
+
+        self.assertEqual(result.title, "Die zehn reichsten Frauen der Weltgeschichte")
+        self.assertEqual(result.image_url, "http://static.diepresse.com/images/uploads_620/a/0/7/4917767/A-woman-drinks-as-she-attends-the-Summer-Fair-in-Moscow_1454581261228828_v0_h.jpg")
+        self.assertRegex(result.summary, "^Ob tot oder lebendig.*Epochen vertreten.$")
