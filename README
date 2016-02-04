@@ -1,0 +1,26 @@
+Server
+======
+
+Use Python 3.4.*; newer versions should work.
+Install dependencies from requirements.txt.
+Use runtests.py to run the tests.
+Use runfetch.py PATH to download news into the repository at PATH.
+
+> python3 -m venv venv
+> source venv/bin/activate
+> pip install -r requirements.txt
+> ./runtests.py
+> ./runfetch.py ../client/public/data
+
+Client
+======
+
+You need NodeJS and npm to run Brunch.
+Install package.json, developer dependencies.
+Use brunch to build.
+
+> npm install
+> export PATH=node_modules/.bin:$PATH
+> brunch build
+> cd public
+> python3 -m http.server

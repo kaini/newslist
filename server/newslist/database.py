@@ -29,6 +29,11 @@ def _exists(repo, file):
 
 
 def fetch(repo):
+    try:
+        os.mkdir(repo)
+    except OSError:
+        pass
+
     cache = {}
     try:
         with open(os.path.join(repo, "cache"), "rb") as fp:

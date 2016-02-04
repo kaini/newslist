@@ -1,7 +1,9 @@
 .*
 
-*.pyc
-__pycache__/
+/server/**/*.pyc
+/server/**/__pycache__/
+/server/venv/
 
 /client/node_modules/
 /client/public/
+
