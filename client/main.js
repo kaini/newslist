@@ -184,7 +184,7 @@ $(document).ready(function() {
 	window.setInterval(function() {
 		console.log("Update")
 		fetch_sources()
-	}, 61000)
+	}, 5 * 60 * 1000)
 
 	var sources_open = false
 	sources_toggle(false)
