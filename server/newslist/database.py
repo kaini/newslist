@@ -81,7 +81,7 @@ def fetch_source(repo, source, cache):
             items.append(item)
 
             if item.image_url:
-                if not _exists(repo, item.image_hash + ".png"):
+                if not _exists(repo, item.image_hash + ".jpg"):
                     print("GET IMAGE " + item.image_url)
                     fetch_image(repo, item.image_url, item.image_hash)
                 else:
@@ -115,7 +115,7 @@ def fetch_image(repo, url, target):
         return
     try:
         i = Image.open(BytesIO(r.content))
-        i.save(os.path.join(repo, target + ".png"))
+        i.save(os.path.join(repo, target + ".jpg"), 'jpeg', optimize=True)
     except Exception:
         pass
 
