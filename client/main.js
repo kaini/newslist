@@ -87,8 +87,8 @@ function refresh_news_display() {
 					box = make_item_box(item, GLOBAL.sources[keys[k]])
 				}
 				insert_anchor.before(box)
-				retry = 0
 			}
+			retry = 0
 		}
 		++i
 	} while (has_hit)
