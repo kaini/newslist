@@ -1,6 +1,9 @@
 "use strict"
 
-var API = "_data"
+var $ = require("jquery")
+
+var API = "data"
+
 var GLOBAL = {
 	items: {},
 	sources: {},
@@ -179,22 +182,30 @@ function sources_toggle(open) {
 	}
 }
 
-$(document).ready(function() {
-	fetch_sources()
-	window.setInterval(function() {
-		console.log("Update")
+function main() {
+	console.log("App init")
+
+	$(document).ready(function() {
 		fetch_sources()
-	}, 5 * 60 * 1000)
+		window.setInterval(function() {
+			console.log("Update")
+			fetch_sources()
+		}, 5 * 60 * 1000)
 
-	var sources_open = false
-	sources_toggle(false)
-	$("#sources-button").click(function() {
-		sources_open = !sources_open
-		sources_toggle(sources_open)
+		var sources_open = false
+		sources_toggle(false)
+		$("#sources-button").click(function() {
+			sources_open = !sources_open
+			sources_toggle(sources_open)
+		})
 	})
-})
 
-$(document).ajaxError(function() {
-	console.error("AJAX Fail!")
-	// TODO ??
-})
+	$(document).ajaxError(function() {
+		console.error("AJAX Fail!")
+		// TODO ??
+	})
+}
+
+module.exports = {
+	main: main
+}

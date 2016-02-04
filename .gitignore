@@ -1,6 +1,7 @@
 .*
+
 *.pyc
 __pycache__/
-/env/
-/client/_data/
 
+/client/node_modules/
+/client/public/

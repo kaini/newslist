@@ -23,7 +23,6 @@ Vagrant.configure(2) do |config|
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
   config.vm.network "forwarded_port", guest: 8000, host: 8000
-  config.vm.network "forwarded_port", guest: 5555, host: 5555
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
@@ -66,11 +65,17 @@ Vagrant.configure(2) do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-    sudo apt-get update
-    sudo apt-get dist-upgrade -y
+    cd /
+
+    apt-get update
+    apt-get dist-upgrade -y
     
-    sudo apt-get install -y python3-pip sqlite3 libjpeg-dev zlib1g-dev
-    sudo pip3 install ipython
-    sudo pip3 install -r /vagrant/server/requirements.txt
+    wget https://nodejs.org/dist/v5.5.0/node-v5.5.0-linux-x64.tar.xz
+    tar -xf node-v5.5.0-linux-x64.tar.xz -C /usr/local --no-same-owner --strip-components 1
+    HOME=/home/vagrant sudo -u vagrant npm config set bin-links false
+
+    apt-get install -y python3-pip libjpeg-dev zlib1g-dev
+    pip3 install ipython
+    pip3 install -r /vagrant/server/requirements.txt
   SHELL
 end
