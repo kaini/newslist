@@ -26,8 +26,9 @@ class NewsItem:
 
 
 class NewsSource:
-    def __init__(self, id, base_url, name, lang):
-        self.id = id
+    def __init__(self, master_id, base_url, name, lang):
+        self.id = sha1(base_url.encode("utf-8")).hexdigest()
+        self.master_id = master_id
         self.base_url = base_url
         self.name = name
         self.lang = lang
@@ -35,6 +36,7 @@ class NewsSource:
     def json_dict(self):
         return {
             "id": self.id,
+            "master_id": self.master_id,
             "base_url": self.base_url,
             "name": self.name,
             "lang": self.lang,
@@ -43,9 +45,11 @@ class NewsSource:
 
 class LeMondeNewsSource(NewsSource):
     def __init__(self):
-        super(LeMondeNewsSource, self).__init__("lemonde",
-                                                "http://www.lemonde.fr/",
-                                                "LeMonde.fr", "fr")
+        super(LeMondeNewsSource, self).__init__(
+            "lemonde",
+            "http://www.lemonde.fr/",
+            "LeMonde.fr",
+            "fr")
 
     def get_articles(self, source):
         soup = BeautifulSoup(source, "html5lib")
@@ -90,10 +94,12 @@ class LeMondeNewsSource(NewsSource):
 
 
 class DerStandardNewsSorce(NewsSource):
-    def __init__(self):
-        super(DerStandardNewsSorce, self).__init__("derstandard",
-                                                   "http://derstandard.at/",
-                                                   "derStandard.at", "de")
+    def __init__(self, url="http://derstandard.at/", suffix=""):
+        super(DerStandardNewsSorce, self).__init__(
+            "derstandard",
+            url,
+            "derStandard.at" + suffix,
+            "de")
 
     def get_articles(self, source):
         soup = BeautifulSoup(source, "html5lib")
@@ -121,6 +127,11 @@ class DerStandardNewsSorce(NewsSource):
 def _make_sources():
     yield LeMondeNewsSource()
     yield DerStandardNewsSorce()
+    for ressort in ("International", "Inland", "Wirtschaft", "Web", "Sport",
+                    "Panorama", "Etat", "Kultur", "Wissenschaft", "Gesundheit",
+                    "Bildung", "Reisen", "Lifestyle", "Familie"):
+        yield DerStandardNewsSorce(url="http://derstandard.at/" + ressort,
+                                   suffix=": " + ressort)
 
 
 NEWS_SOURCES = tuple(_make_sources())

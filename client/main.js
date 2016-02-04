@@ -19,13 +19,13 @@ function set_image_class() {
 }
 
 function make_item_box(item, source) {
-	var image = $("<img>").attr("src", item.image ? API + "/" + item.image + ".png" : "icons/" + source.id + ".png")
+	var image = $("<img>").attr("src", item.image ? API + "/" + item.image + ".png" : "icons/" + source.master_id + ".png")
 		                  .attr("alt", item.image ? item.title : source.name)
 		                  .attr("class", item.image ? "article-image" : "article-image-dummy")
 		                  .on("load", set_image_class)
     var source_image = null
     if (item.image) {
-    	var source_image = $("<img>").attr("src", "icons/" + source.id + ".png")
+    	var source_image = $("<img>").attr("src", "icons/" + source.master_id + ".png")
     	                             .attr("alt", source.name)
     	                             .attr("class", "source-image")
     }

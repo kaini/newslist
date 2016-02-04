@@ -66,6 +66,9 @@ def fetch_source(repo, source, cache):
         traceback.print_exc()
         return
 
+    if len(article_urls) > 20:
+        article_urls = article_urls[:20]
+
     items = []
     for article_url in article_urls:
         try:
