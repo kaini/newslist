@@ -56,11 +56,16 @@ class LeMondeNewsSource(NewsSource):
     def get_article(self, source, url):
         soup = BeautifulSoup(source, "html5lib")
 
-        title = soup.h1.text.strip()
+        title = soup.title.string
+        if "|" in title:
+            title = title[:title.find("|")]
+        title = title.strip()
 
         container = soup.select_one("#articleBody, "
                                     "div.entry-content, "
-                                    "div.container_18 div.grid_12")
+                                    "div.container_18 div.grid_12, "
+                                    ".content-article-body, "
+                                    ".texte")
         summary = ""
         for child in container.children:
             if not isinstance(child, NavigableString) and \
@@ -69,7 +74,10 @@ class LeMondeNewsSource(NewsSource):
                 if summary and summary != "Reportage":
                     break
 
-        image = soup.select_one("#articleBody img, .entry-content img")
+        image = soup.select_one("#articleBody img, "
+                                ".entry-content img, "
+                                ".content-article-body img, "
+                                ".texte img")
         if image:
             src = image.get("src")
             if src.startswith("data:"):

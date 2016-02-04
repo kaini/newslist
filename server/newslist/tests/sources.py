@@ -61,6 +61,24 @@ class TestSources(unittest.TestCase):
         self.assertEqual(result.image_url, "http://s1.lemde.fr/image/2016/01/01/534x0/4840638_7_88c9_devant-le-restaurant-le-petit-cambodge-a_340b2fc82edc9f866d93da3d1debb028.jpg")
         self.assertRegex(result.summary, "^Lorsqu.on a.*en t.moigner.$")
 
+    def test_get_article_lemonde_festival(self):
+        with open("newslist/fixtures/lemonde_article_festival.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeMondeNewsSource().get_article(source, "")
+
+        self.assertRegex(result.title, "^Benjamin.*ma.tres$")
+        self.assertEqual(result.image_url, "http://s2.lemde.fr/image/2015/09/09/534x0/4750235_6_c816_benjamin-millepied-en-repetition-pour-la_3eb09811d4631d969115cfed5a5a5c33.jpg")
+        self.assertRegex(result.summary, "^C.est quasiment.*grandi.$")
+
+    def test_get_article_lemonde_afrique(self):
+        with open("newslist/fixtures/lemonde_article_afrique.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeMondeNewsSource().get_article(source, "")
+
+        self.assertRegex(result.title, "^Proc.s Gbagbo.*du juge$")
+        self.assertEqual(result.image_url, "http://s2.lemde.fr/image/2016/02/04/768x0/4859284_6_d696_manifestation-a-abidjan-en-marge-de-la_8efe93e89910ada336c1586433368683.jpg")
+        self.assertRegex(result.summary, "^..P547...parle.*r.publicaine.$")
+
     def test_get_articles_derstandard(self):
         with open("newslist/fixtures/derstandard_index.html", "r", encoding="utf-8") as fp:
             source = fp.read()
