@@ -234,7 +234,7 @@ class SueddeutscheNewsSource(NewsSource):
                                   ".entry-summary")
         summary = summary.get_text().strip()
 
-        image = soup.select_one("#article-body img, "
+        image = soup.select_one("#sitecontent img, "
                                 ".content .image img, "
                                 ".teaser-image img")
         if image:
