@@ -1,21 +1,27 @@
 from newslist.sources import LeMondeNewsSource, DerStandardNewsSorce, \
                              DiePresseNewsSource
 import unittest
+import os
+
+
+def _read_fixture(name):
+    with open(os.path.join("newslist/fixtures", name), "r",
+              encoding="utf-8") as fp:
+        return fp.read()
 
 
 class TestSources(unittest.TestCase):
 
     def test_get_articles_lemonde(self):
-        with open("newslist/fixtures/lemonde_index.html", "r", encoding="utf-8") as fp:
-            source = fp.read()
+        source = _read_fixture("lemonde_index.html")
         result = LeMondeNewsSource().get_articles(source)
 
-        self.assertEqual(len(result), 12)
+        self.assertEqual(len(result), 21)
         self.assertEqual(result[0], "http://www.lemonde.fr/international/article/2016/02/01/la-belgique-a-des-difficultes-avec-le-fanatisme-mais-pas-plus-que-les-banlieues-francaises_4856969_3210.html")
-        self.assertEqual(result[3], "http://www.lemonde.fr/europe/article/2016/01/27/polemiques-sur-les-risques-d-infiltration-par-des-djihadistes-des-sites-nucleaires-en-belgique_4854572_3214.html")
-        self.assertEqual(result[5], "http://www.lemonde.fr/les-decodeurs/article/2016/02/01/primaire-democrate-aux-etats-unis-quand-et-comment-chaque-etat-vote-t-il_4857044_4355770.html")
-        self.assertEqual(result[8], "http://www.lemonde.fr/ameriques/article/2016/01/30/la-colere-moteur-des-primaires-americaines_4856414_3222.html")
-        self.assertEqual(result[11], "http://www.lemonde.fr/m-gastronomie/article/2016/02/01/michelin-trois-etoiles-pour-alain-ducasse-au-plaza-athenee-et-le-cinq_4857129_4497540.html")
+        self.assertEqual(result[3], "http://ecologie.blog.lemonde.fr/2016/02/01/pourquoi-un-requin-en-a-devore-un-autre-dans-un-aquarium-de-seoul/")
+        self.assertEqual(result[5], "http://www.lemonde.fr/europe/article/2016/02/01/brexit-journee-decisive-de-negociations-entre-m-cameron-et-les-europeens_4857157_3214.html")
+        self.assertEqual(result[8], "http://www.lemonde.fr/proche-orient/article/2016/02/01/a-geneve-des-discussions-s-amorcent-sur-le-volet-humanitaire-en-syrie_4857009_3218.html")
+        self.assertEqual(result[20], "http://www.lemonde.fr/bande-dessinee/article/2016/01/31/festival-de-bd-d-angouleme-le-mea-culpa-de-l-auteur-du-canular_4856851_4420272.html")
 
     def test_get_article_lemonde_normal(self):
         with open("newslist/fixtures/lemonde_article_normal.html", "r", encoding="utf-8") as fp:
@@ -43,6 +49,15 @@ class TestSources(unittest.TestCase):
         self.assertRegex(result.title, "^Pourquoi un requin en a.*oul$")
         self.assertEqual(result.image_url, "http://ecologie.blog.lemonde.fr/files/2016/01/01-29-sharkeatingshark-01-1024x660.jpg")
         self.assertRegex(result.summary, "^Vous avez.*lutte de territoire.$")
+
+    def test_get_article_lemonde_blog_noimg(self):
+        with open("newslist/fixtures/lemonde_article_blog_noimg.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeMondeNewsSource().get_article(source, "")
+
+        self.assertRegex(result.title, "^D.ch.ance.*parole..$")
+        self.assertIsNone(result.image_url)
+        self.assertRegex(result.summary, "^Inscrire la.*apatride..$")
 
     def test_get_article_lemonde_video(self):
         with open("newslist/fixtures/lemonde_article_video.html", "r", encoding="utf-8") as fp:
@@ -167,7 +182,7 @@ class TestSources(unittest.TestCase):
         self.assertEqual(result.title, "ZTE Blade V6: Ein iPhone mit Haken")
         self.assertEqual(result.image_url, "http://static.diepresse.com/images/uploads_564/b/a/6/4918182/2_1454512771965620.jpg")
         self.assertRegex(result.summary, "^Sieht aus wie.*gro.en Haken.$")
-    
+
     def test_get_article_diepresse_galerie2(self):
         with open("newslist/fixtures/diepresse_article_galerie2.html", "r", encoding="utf-8") as fp:
             source = fp.read()

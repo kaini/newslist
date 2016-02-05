@@ -53,9 +53,21 @@ class LeMondeNewsSource(NewsSource):
 
     def get_articles(self, source):
         soup = BeautifulSoup(source, "html5lib")
+        titles = soup.select(".titres_edito a h1, "
+                             ".titres_edito a h2, "
+                             ".titres_edito a h3, "
+                             ".titres_liste a h1, "
+                             ".titres_liste a h2, "
+                             ".titres_liste a h3")
+        links = []
+        for title in titles:
+            for parent in title.parents:
+                if parent.name == "a":
+                    links.append(parent)
+                    break
         return [urljoin(self.base_url, link.get("href"))
                 for link
-                in soup.select(".titres_edito a")]
+                in links]
 
     def get_article(self, source, url):
         soup = BeautifulSoup(source, "html5lib")
@@ -83,10 +95,20 @@ class LeMondeNewsSource(NewsSource):
                                 ".content-article-body img, "
                                 ".texte img")
         if image:
-            src = image.get("src")
-            if src.startswith("data:"):
-                src = image.get("data-src")
-            image = urljoin(self.base_url, src)
+            has_bad_parent = False
+            for parent in image.parents:
+                has_bad_parent = ("class" in parent.attrs and
+                                  "wp-socializer" in parent["class"])
+                if has_bad_parent:
+                    break
+            
+            if has_bad_parent:
+                image = None
+            else:
+                src = image.get("src")
+                if src.startswith("data:"):
+                    src = image.get("data-src")
+                image = urljoin(self.base_url, src)
         else:
             image = None
 

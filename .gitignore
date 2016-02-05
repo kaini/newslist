@@ -1,4 +1,8 @@
 .*
+*.sublime-*
+*.swp
+*~
+*#
 
 /server/**/*.pyc
 /server/**/__pycache__/
