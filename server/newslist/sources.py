@@ -49,7 +49,7 @@ class LeMondeNewsSource(NewsSource):
             "lemonde",
             "http://www.lemonde.fr/",
             "LeMonde.fr",
-            "fr")
+            "fr-FR")
 
     def get_articles(self, source):
         soup = BeautifulSoup(source, "html5lib")
@@ -108,7 +108,7 @@ class LeMondeNewsSource(NewsSource):
                 src = image.get("src")
                 if src.startswith("data:"):
                     src = image.get("data-src")
-                image = urljoin(self.base_url, src)
+                image = urljoin(url, src)
         else:
             image = None
 
@@ -121,7 +121,7 @@ class DerStandardNewsSorce(NewsSource):
             "derstandard",
             url,
             "derStandard.at" + suffix,
-            "de")
+            "de-AT")
 
     def get_articles(self, source):
         soup = BeautifulSoup(source, "html5lib")
@@ -148,7 +148,7 @@ class DerStandardNewsSorce(NewsSource):
         else:
             image = soup.select_one("#objectContent img")
             if image:
-                image = urljoin(self.base_url, image.get("src"))
+                image = urljoin(url, image.get("src"))
             else:
                 image = None
 
@@ -161,7 +161,7 @@ class DiePresseNewsSource(NewsSource):
             "diepresse",
             "http://diepresse.com/",
             "DiePresse.com",
-            "de")
+            "de-AT")
 
     def get_articles(self, source):
         soup = BeautifulSoup(source, "html5lib")
@@ -195,7 +195,52 @@ class DiePresseNewsSource(NewsSource):
                                 ".gallery_preview img, "
                                 ".picfield img")
         if image:
-            image = urljoin(self.base_url, image.get("src"))
+            image = urljoin(url, image.get("src"))
+        else:
+            image = None
+
+        return NewsItem(title, summary, image, url)
+
+
+class SueddeutscheNewsSource(NewsSource):
+    def __init__(self):
+        super(SueddeutscheNewsSource, self).__init__(
+            "sueddeutsche",
+            "http://www.sueddeutsche.de/",
+            "Süddeutsche Zeitung",
+            "de-DE")
+
+    def get_articles(self, source):
+        soup = BeautifulSoup(source, "html5lib")
+        return [urljoin(self.base_url, link.get("href"))
+                for link
+                in soup.select("#sitecontent a.entry-title")
+                if not link.get("href").endswith("/Ihr_Forum") and
+                   "//www.sueddeutsche.de/" in link.get("href")]
+
+    def get_article(self, source, url):
+        soup = BeautifulSoup(source, "html5lib")
+
+        title = soup.select_one("h2, span.app-type").get_text().strip()
+        prefix = soup.select_one("h2 strong")
+        if prefix:
+            prefix = prefix.get_text().strip()
+        else:
+            prefix = ""
+        title = title[len(prefix):].strip()
+
+        summary = soup.select_one("#article-body > p, "
+                                  ".app-content p, "
+                                  ".entry-summary")
+        summary = summary.get_text().strip()
+
+        image = soup.select_one("#article-body img, "
+                                ".content .image img, "
+                                ".teaser-image img")
+        if image:
+            if "data-src" in image.attrs:
+                image.attrs["src"] = image.attrs["data-src"]
+            image = urljoin(url, image.get("src"))
         else:
             image = None
 
@@ -211,6 +256,7 @@ def _make_sources():
         yield DerStandardNewsSorce(url="http://derstandard.at/" + ressort,
                                    suffix=": " + ressort)
     yield DiePresseNewsSource()
+    yield SueddeutscheNewsSource()
 
 
 NEWS_SOURCES = tuple(_make_sources())
