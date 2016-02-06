@@ -26,9 +26,9 @@ class NewsItem:
 
 
 class NewsSource:
-    def __init__(self, master_id, base_url, name, lang):
-        self.id = sha1(base_url.encode("utf-8")).hexdigest()
-        self.master_id = master_id
+    def __init__(self, id, parent_id, base_url, name, lang):
+        self.id = id
+        self.parent_id = parent_id
         self.base_url = base_url
         self.name = name
         self.lang = lang
@@ -36,7 +36,7 @@ class NewsSource:
     def json_dict(self):
         return {
             "id": self.id,
-            "master_id": self.master_id,
+            "parent_id": self.parent_id,
             "base_url": self.base_url,
             "name": self.name,
             "lang": self.lang,
@@ -46,7 +46,7 @@ class NewsSource:
 class LeMondeNewsSource(NewsSource):
     def __init__(self):
         super(LeMondeNewsSource, self).__init__(
-            "lemonde",
+            "lemonde", None,
             "http://www.lemonde.fr/",
             "LeMonde.fr",
             "fr-FR")
@@ -116,11 +116,14 @@ class LeMondeNewsSource(NewsSource):
 
 
 class DerStandardNewsSorce(NewsSource):
-    def __init__(self, url="http://derstandard.at/", suffix=""):
+    def __init__(self, ressort=None):
+        id_suffix = ("-" + ressort.lower()) if ressort else ""
+        url_suffix = ressort or ""
+        name_suffix = (": " + ressort) if ressort else ""
         super(DerStandardNewsSorce, self).__init__(
-            "derstandard",
-            url,
-            "derStandard.at" + suffix,
+            "derstandard" + id_suffix, "derstandard" if ressort else None,
+            "http://derstandard.at/" + url_suffix,
+            "derStandard.at" + name_suffix,
             "de-AT")
 
     def get_articles(self, source):
@@ -158,7 +161,7 @@ class DerStandardNewsSorce(NewsSource):
 class DiePresseNewsSource(NewsSource):
     def __init__(self):
         super(DiePresseNewsSource, self).__init__(
-            "diepresse",
+            "diepresse", None,
             "http://diepresse.com/",
             "DiePresse.com",
             "de-AT")
@@ -205,7 +208,7 @@ class DiePresseNewsSource(NewsSource):
 class SueddeutscheNewsSource(NewsSource):
     def __init__(self):
         super(SueddeutscheNewsSource, self).__init__(
-            "sueddeutsche",
+            "sueddeutsche", None,
             "http://www.sueddeutsche.de/",
             "Süddeutsche Zeitung",
             "de-DE")
@@ -253,8 +256,7 @@ def _make_sources():
     for ressort in ("International", "Inland", "Wirtschaft", "Web", "Sport",
                     "Panorama", "Etat", "Kultur", "Wissenschaft", "Gesundheit",
                     "Bildung", "Reisen", "Lifestyle", "Familie"):
-        yield DerStandardNewsSorce(url="http://derstandard.at/" + ressort,
-                                   suffix=": " + ressort)
+        yield DerStandardNewsSorce(ressort)
     yield DiePresseNewsSource()
     yield SueddeutscheNewsSource()
 

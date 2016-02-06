@@ -10,6 +10,18 @@ var GLOBAL = {
 	xhrs: {},
 }
 
+function toplevel_parent(source) {
+	if (source.parent_id) {
+		return toplevel_parent(GLOBAL.sources[source.parent_id])
+	} else {
+		return source
+	}
+}
+
+function cmp(a, b) {
+	return (a < b ? -1 : (a == b ? 0 : 1))
+}
+
 function set_image_class() {
 	var img = $(this)
 	if (img.attr("class") == "article-image") {
@@ -21,14 +33,15 @@ function set_image_class() {
 	}
 }
 
-function make_item_box(item, source) {
-	var image = $("<img>").attr("src", item.image ? API + "/" + item.image + ".jpg" : "icons/" + source.master_id + ".png")
+function make_item_box(item) {
+	var source = item.source
+	var image = $("<img>").attr("src", item.image ? API + "/" + item.image + ".jpg" : "icons/" + toplevel_parent(source).id + ".png")
 		                  .attr("alt", item.image ? item.title : source.name)
 		                  .attr("class", item.image ? "article-image" : "article-image-dummy")
 		                  .on("load", set_image_class)
     var source_image = null
     if (item.image) {
-    	var source_image = $("<img>").attr("src", "icons/" + source.master_id + ".png")
+    	var source_image = $("<img>").attr("src", "icons/" + toplevel_parent(source).id + ".png")
     	                             .attr("alt", source.name)
     	                             .attr("class", "source-image")
     }
@@ -53,49 +66,70 @@ function make_item_box(item, source) {
 	return article
 }
 
-function refresh_news_display() {
-	var keys = []
-	for (var key in GLOBAL.items) {
-		keys.push(key)
+// Collect all items in a news layer and merge and order them zip-like.
+function news_items(parent) {
+	// Child sources
+	var sources = []
+	for (var key in GLOBAL.sources) {
+		var source = GLOBAL.sources[key]
+		if (source.parent_id === (parent ? parent.id : null)) {
+			sources.push(source)
+		}
 	}
-	keys.sort(function(a, b) {
-		var akey = GLOBAL.sources[a].name.toLowerCase()
-		var bkey = GLOBAL.sources[b].name.toLowerCase()
-		return (akey < bkey ? -1 : (akey > bkey ? 1 : 0))
+	sources.sort(function(a, b) {
+		return cmp(a.order, b.order)
 	})
 
-	var i = 0
+	// Get this items and child sources items
+	var itemss = parent ? [GLOBAL.items[parent.id] || []] : []
+	$(sources).each(function() {
+		itemss.push(news_items(this))
+	})
+
+	// Merge the items zip-like
+	var items = []
+	var item_ids = {}
+	var idxs = []
+	for (var i = 0; i < itemss.length; ++i) {
+		idxs.push(0)
+	}
+	do {
+		var hit = false
+		for (var i = 0; i < itemss.length; ++i) {
+			if (idxs[i] < itemss[i].length) {
+				var item = itemss[i][idxs[i]]
+				++idxs[i]
+				hit = true
+				if (!item_ids[item.id]) {
+					items.push(item)
+					item_ids[item.id] = true
+				} else {
+					--i
+				}
+			}
+		}
+	} while (hit)
+
+	// Done
+	return items
+}
+
+function refresh_news_display() {
+	console.log("Refresh display")
+	var items = news_items(null)
 	var insert_anchor = $("#anchor")
 	$("#items article").attr("data-delete", "data-delete")
-	do {
-		var has_hit = false
-		var retry = 0
-		for (var k = 0; k < keys.length; ++k) {
-			var item = GLOBAL.items[keys[k]][i + retry]
-			if (item) {
-				has_hit = true
-
-				var box = $("#article-" + item.id)
-				if (box.length && !box.attr("data-delete")) {
-					// article already in DOM because item is a duplicate
-					// retry with next article
-					--k
-					++retry
-					continue
-				} else if (box.length) {
-					// article already in DOM
-					box.attr("data-delete", null)
-				} else {
-					// article not added yet
-					box = make_item_box(item, GLOBAL.sources[keys[k]])
-				}
-				insert_anchor.before(box)
-			}
-			retry = 0
+	$(items).each(function() {
+		var box = $("#article-" + this.id)
+		if (box.length) {
+			// article already in DOM
+			box.attr("data-delete", null)
+		} else {
+			// article not added yet
+			box = make_item_box(this)
 		}
-		++i
-	} while (has_hit)
-
+		insert_anchor.before(box)
+	})
 	$("#items article[data-delete]").remove()
 
 	$("#lastupdate").text(new Date().toLocaleString(
@@ -132,36 +166,71 @@ function source_changed() {
 function fetch_sources() {
 	$.get({url: API + "/sources.json", cache: false})
 		.done(function(result) {
+			// throw away old sources
 			var ul = $("#sources")
 			ul.empty()
-			result.sort(function(a, b) {
-				var akey = a.name.toLowerCase()
-				var bkey = b.name.toLowerCase()
-				return (akey < bkey ? -1 : (akey > bkey ? 1 : 0))
-			})
+			GLOBAL.sources = {}
+
+			// group by parent (root === "")
+			var sources_by_parent_id = {}
 			$(result).each(function() {
-				var input = $("<input>").attr("type", "checkbox")
-				                        .attr("id", "source-" + this.id)
-				                        .attr("data-source-id", this.id)
-				                        .change(source_changed)
-				if (localStorage.getItem("source-" + this.id)) {
-					input.attr("checked", "checked")
-					input.change()
-				}
-				var label = $("<label>").text(this.name)
-				                        .attr("for", "source-" + this.id)
-				var li = $("<li>").append(input)
-				                  .append(label)
-				ul.append(li)
-				GLOBAL.sources[this.id] = this
+				var key = this.parent_id || ""
+				sources_by_parent_id[key] = sources_by_parent_id[key] || []
+				sources_by_parent_id[key].push(this)
 			})
+
+			// sort each group by name
+			for (var key in sources_by_parent_id) {
+				sources_by_parent_id[key].sort(function(a, b) {
+					var akey = a.name.toLowerCase()
+					var bkey = b.name.toLowerCase()
+					return cmp(akey, bkey)
+				})
+			}
+
+			// create new sources in DOM (recursive)
+			create_sources(ul, "", sources_by_parent_id)
 		})
+}
+
+function create_sources(ul, key, sources_by_parent_id) {
+	var sources = sources_by_parent_id[key]
+	var i = 0
+	$(sources).each(function() {
+		GLOBAL.sources[this.id] = this
+		this.order = i++
+		Object.freeze(this)
+
+		var input = $("<input>").attr("type", "checkbox")
+		                        .attr("id", "source-" + this.id)
+		                        .attr("data-source-id", this.id)
+		                        .change(source_changed)
+		if (localStorage.getItem("source-" + this.id)) {
+			input.attr("checked", "checked")
+			input.change()
+		}
+		var label = $("<label>").text(this.name)
+		                        .attr("for", "source-" + this.id)
+		var li = $("<li>").append(input)
+		                  .append(label)
+		if (sources_by_parent_id[this.id]) {
+			var sub_ul = $("<ul>")
+			create_sources(sub_ul, this.id, sources_by_parent_id)
+			li.append(sub_ul)
+		}
+		ul.append(li)
+	})
 }
 
 function fetch_source(source_id) {
 	var xhr = $.get({url: API + "/source_" + source_id + ".json", cache: false})
 		.done(function(result) {
 			GLOBAL.items[source_id] = result
+			Object.freeze(result)
+			$(result).each(function() {
+				this.source = GLOBAL.sources[source_id]
+				Object.freeze(this)
+			})
 			refresh_news_display()
 		})
 		.always(function() {

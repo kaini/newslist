@@ -138,9 +138,13 @@ body > h1 {
 	right: 1rem;
 	z-index: 20;
 	background-color: #fff;
-	width: 10rem;
+	width: 20rem;
 	border:  0.0625rem solid #aaa;
 	padding: 0.5rem;
+}
+
+.config h1 {
+	margin-bottom: 0.25rem;
 }
 
 .config h1 a {
@@ -149,7 +153,6 @@ body > h1 {
 }
 
 .config ul {
-	margin-top: 0.25rem;
 	margin-left: 1rem;
 }
 
