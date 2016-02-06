@@ -190,6 +190,7 @@ function fetch_sources() {
 
 			// create new sources in DOM (recursive)
 			create_sources(ul, "", sources_by_parent_id)
+			refresh_showhides()
 		})
 }
 
@@ -214,8 +215,20 @@ function create_sources(ul, key, sources_by_parent_id) {
 		var li = $("<li>").append(input)
 		                  .append(label)
 		if (sources_by_parent_id[this.id]) {
-			var sub_ul = $("<ul>")
+			var sid = "source-sub-" + this.id
+			var show_text = $("<span>").text(" show ressorts")
+			                           .attr("data-closed", sid)
+			var hide_text = $("<span>").text(" hide ressorts")
+			                           .attr("data-open", sid)
+			var a = $("<a>").attr("href", "#")
+			                .attr("data-showhide", "closed")
+			                .attr("id", sid)
+			                .attr("class", "sub")
+			                .append(show_text)
+			                .append(hide_text)
+			var sub_ul = $("<ul>").attr("data-open", sid)
 			create_sources(sub_ul, this.id, sources_by_parent_id)
+			li.append(a)
 			li.append(sub_ul)
 		}
 		ul.append(li)
@@ -239,16 +252,23 @@ function fetch_source(source_id) {
 	GLOBAL.xhrs[source_id] = xhr
 }
 
-function sources_toggle(open) {
-	if (open) {
-		$("#sources-button .icon-open").hide()
-		$("#sources-button .icon-close").show()
-		$("#sources").show()
-	} else {
-		$("#sources-button .icon-open").show()
-		$("#sources-button .icon-close").hide()
-		$("#sources").hide()
-	}
+function refresh_showhides() {
+	$("[data-closed]").each(function() {
+		var state = $("#" + $(this).attr("data-closed")).attr("data-showhide")
+		if (state === "closed") {
+			$(this).show()
+		} else {
+			$(this).hide()
+		}
+	})
+	$("[data-open]").each(function() {
+		var state = $("#" + $(this).attr("data-open")).attr("data-showhide")
+		if (state === "open") {
+			$(this).show()
+		} else {
+			$(this).hide()
+		}
+	})
 }
 
 function main() {
@@ -261,12 +281,28 @@ function main() {
 			fetch_sources()
 		}, 5 * 60 * 1000)
 
-		var sources_open = false
-		sources_toggle(false)
-		$("#sources-button").click(function() {
-			sources_open = !sources_open
-			sources_toggle(sources_open)
+		// Show/Hide toggle feature
+		$(document).on("click", "[data-showhide]", function() {
+			var elem = $(this)
+			if (elem.attr("data-showhide") === "closed") {
+				elem.attr("data-showhide", "open")
+				$("[data-open='" + elem.attr("id") + "']").each(function() {
+					$(this).show()
+				})
+				$("[data-closed='" + elem.attr("id") + "']").each(function() {
+					$(this).hide()
+				})
+			} else {
+				elem.attr("data-showhide", "closed")
+				$("[data-open='" + elem.attr("id") + "']").each(function() {
+					$(this).hide()
+				})
+				$("[data-closed='" + elem.attr("id") + "']").each(function() {
+					$(this).show()
+				})
+			}
 		})
+		refresh_showhides()
 	})
 
 	$(document).ajaxError(function() {

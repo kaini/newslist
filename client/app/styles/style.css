@@ -143,10 +143,6 @@ body > h1 {
 	padding: 0.5rem;
 }
 
-.config h1 {
-	margin-bottom: 0.25rem;
-}
-
 .config h1 a {
 	color: #aaa;
 	text-decoration: none;
@@ -156,7 +152,13 @@ body > h1 {
 	margin-left: 1rem;
 }
 
-.config .icon-close, .config .icon-open {
-	display: inline-block;
-	width: 1.2rem;
+.config > ul {
+	margin-top: 0.25rem;
+}
+
+.config ul .sub {
+	color: #aaa;
+	text-decoration: none;
+	font-size: 0.8rem;
+	padding-left: 0.33rem;
 }
