@@ -85,7 +85,8 @@ class LeMondeNewsSource(NewsSource):
         summary = ""
         for child in container.children:
             if not isinstance(child, NavigableString) and \
-               (child.name.startswith("h") or child.name == "p"):
+               (child.name.startswith("h") or child.name == "p") and \
+               ("class" not in child.attrs or "txt_gris_moyen" not in child.attrs["class"]):
                 summary = child.get_text().strip()
                 if summary and summary not in ("Reportage", "En images"):
                     break
