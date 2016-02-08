@@ -183,15 +183,15 @@ class DiePresseNewsSource(NewsSource):
     def get_article(self, source, url):
         soup = BeautifulSoup(source, "html5lib")
 
-        title = soup.select_one("#maincontent h1").get_text().strip()
+        title = soup.select_one("#maincontent h1, "
+                                "h1.hed").get_text().strip()
 
         summary = soup.select_one(".articlelead, .diatext")
         if not summary:
-            summary = soup.select(".pictext")[1]
-            for child in summary.children:
-                if not isinstance(child, NavigableString) and \
-                   child.name == "p" and child.get_text().strip():
-                    summary = child
+            summary = soup.select(".pictext p")
+            for elem in summary:
+                if elem.get_text().strip():
+                    summary = elem
                     break
         summary = summary.get_text().strip()
 

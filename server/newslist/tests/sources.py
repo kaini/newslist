@@ -192,6 +192,15 @@ class TestSources(unittest.TestCase):
         self.assertEqual(result.image_url, "http://static.diepresse.com/images/uploads_620/a/0/7/4917767/A-woman-drinks-as-she-attends-the-Summer-Fair-in-Moscow_1454581261228828_v0_h.jpg")
         self.assertRegex(result.summary, "^Ob tot oder lebendig.*Epochen vertreten.$")
     
+    def test_get_article_diepresse_galerie3(self):
+        with open("newslist/fixtures/diepresse_article_galerie3.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = DiePresseNewsSource().get_article(source, "http://immobilien.diepresse.com/home/4921362/Modell_Wie-der-Schwedenplatz-kunftig-aussehen-konnte")
+
+        self.assertRegex(result.title, "^Modell: Wie der.*aussehen k.nnte$")
+        self.assertEqual(result.image_url, "http://immobilien.diepresse.com/images/uploads_600/8/1/2/4921362/Schweden1_1454934867185881.jpg")
+        self.assertRegex(result.summary, "^Die Neugestaltung.*Wahl genommen.$")
+
     def test_get_articles_sueddeutsche(self):
         with open("newslist/fixtures/sueddeutsche_index.html", "r", encoding="utf-8") as fp:
             source = fp.read()
