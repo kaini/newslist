@@ -116,6 +116,15 @@ class TestSources(unittest.TestCase):
         self.assertEqual(result.image_url, "http://images.derstandard.at/t/12/2016/01/31/zentralmaturaArtikelbild.jpg")
         self.assertRegex(result.summary, "^Die Premiere.*Problemfall$")
 
+    def test_get_article_derstandard_normal2(self):
+        with open("newslist/fixtures/derstandard_article_normal2.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = DerStandardNewsSorce().get_article(source, "http://derstandard.at/2000030602066/New-Hampshire-als-Feuerprobe-fuer-Donald-Trump")
+
+        self.assertEqual(result.title, "New Hampshire als Feuerprobe für Trump")
+        self.assertEqual(result.image_url, "http://images.derstandard.at/t/E400/2016/02/08/trumphaha.jpg")
+        self.assertRegex(result.summary, "^Immobilientycoon.*Marco Rubio$")
+
     def test_get_article_derstandard_nosidebar(self):
         with open("newslist/fixtures/derstandard_article_nosidebar.html", "r", encoding="utf-8") as fp:
             source = fp.read()
@@ -201,6 +210,24 @@ class TestSources(unittest.TestCase):
         self.assertEqual(result.image_url, "http://immobilien.diepresse.com/images/uploads_600/8/1/2/4921362/Schweden1_1454934867185881.jpg")
         self.assertRegex(result.summary, "^Die Neugestaltung.*Wahl genommen.$")
 
+    def test_get_article_diepresse_quiz(self):
+        with open("newslist/fixtures/diepresse_article_quiz.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = DiePresseNewsSource().get_article(source, "http://diepresse.com/home/kultur/film/oscar/4909162/index")
+
+        self.assertEqual(result.title, "Oscar 2016")
+        self.assertEqual(result.image_url, "http://diepresse.com/images/uploads/8/6/a/4909162/Actor-DiCaprio-poses-as-he-arrives-for-the-British-premiere-of-The-Revenant-in-London-Britain_1453382553722379.jpg")
+        self.assertEqual(result.summary, "Film-Quiz: Wie heißt diese Oscar-Nominierte?")
+
+    def test_get_article_diepresse_thema(self):
+        with open("newslist/fixtures/diepresse_article_thema.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = DiePresseNewsSource().get_article(source, "http://immobilien.diepresse.com/home/4921362/Modell_Wie-der-Schwedenplatz-kunftig-aussehen-konnte")
+
+        self.assertEqual(result.title, "Börseblitz")
+        self.assertEqual(result.image_url, "http://static.diepresse.com/images/uploads_300/a/b/4/4922036/atx_1455016899418842.jpg")
+        self.assertRegex(result.summary, "^Somit hinkte.*Richtung fanden.$")
+
     def test_get_articles_sueddeutsche(self):
         with open("newslist/fixtures/sueddeutsche_index.html", "r", encoding="utf-8") as fp:
             source = fp.read()
@@ -218,7 +245,7 @@ class TestSources(unittest.TestCase):
             source = fp.read()
         result = SueddeutscheNewsSource().get_article(source, "http://www.sueddeutsche.de/")
 
-        self.assertRegex(result.title, "^Terrorverdacht.*Attent.tern$")
+        self.assertRegex(result.title, "^Festnahmen: Polizei.*Attentat$")
         self.assertEqual(result.image_url, "http://polpix.sueddeutsche.com/polopoly_fs/1.2850232.1454606934!/httpImage/image.jpg_gen/derivatives/300x168/image.jpg")
         self.assertRegex(result.summary, "^Nach bundesweiten.*Sicherheitskreise.$")
 
@@ -227,7 +254,7 @@ class TestSources(unittest.TestCase):
             source = fp.read()
         result = SueddeutscheNewsSource().get_article(source, "http://www.sueddeutsche.de/")
 
-        self.assertRegex(result.title, "^Volkswagen verschiebt.*Hauptversammlung$")
+        self.assertRegex(result.title, "^VW verschiebt.*Hauptversammlung$")
         self.assertIsNone(result.image_url)
         self.assertRegex(result.summary, "^Das Unternehmen.* nach.$")
 
@@ -236,7 +263,7 @@ class TestSources(unittest.TestCase):
             source = fp.read()
         result = SueddeutscheNewsSource().get_article(source, "http://www.sueddeutsche.de/")
 
-        self.assertEqual(result.title, "Diese neun China-Transfers erstaunen die Fußballwelt")
+        self.assertEqual(result.title, "Transfermarkt: China erstaunt die Fußballwelt")
         self.assertEqual(result.image_url, "http://polpix.sueddeutsche.com/polopoly_fs/1.2850573.1454667310!/httpImage/image.jpg_gen/derivatives/900x600/image.jpg")
         self.assertRegex(result.summary, "^Alex Teixeira.*.Überblick.$")
    
@@ -245,6 +272,6 @@ class TestSources(unittest.TestCase):
             source = fp.read()
         result = SueddeutscheNewsSource().get_article(source, "http://quiz.sueddeutsche.de/quiz/1df4a0211b9280f8f824b135e68e6d22-reisequiz-der-woche--amsterdam")
 
-        self.assertEqual(result.title, "Was wissen Sie wirklich über Amsterdam?")
+        self.assertEqual(result.title, "Reisequiz der Woche: Amsterdam")
         self.assertEqual(result.image_url, "http://quiz.sueddeutsche.de/upload/9964/7666/Tulpen_Reuters_560.jpg")
         self.assertRegex(result.summary, "^Gibt es.*sieben Fragen.$")

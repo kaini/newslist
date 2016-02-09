@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup, NavigableString
 from urllib.parse import urljoin
 from hashlib import sha1
+from warnings import warn
 
 
 class NewsItem:
@@ -43,6 +44,58 @@ class NewsSource:
         }
 
 
+def _has_class(elem, class_name):
+    return "class" in elem.attrs and class_name in elem.attrs["class"]
+
+
+def _has_class_r(elem, class_name):
+    if _has_class(elem, class_name):
+        return True
+    for p in elem.parents:
+        if _has_class(p, class_name):
+            return True
+    return False
+
+
+def _get_title(soup, sep=()):
+    if not isinstance(sep, tuple):
+        sep = (sep,)
+
+    title = soup.title.get_text()
+    for s in sep:
+        if title.find(s) >= 0:
+            title = title[:title.find(s)]
+    return title.strip()
+
+
+def _get_summary(soup, candidates_selector, *, remove_if=lambda e: False):
+    elems = soup.find_all(True)
+    candidates = soup.select(candidates_selector)
+    candidates.sort(key=elems.index)
+    for candidate in candidates:
+        if not remove_if(candidate):
+            text = candidate.get_text(" ", strip=True)
+            if text:
+                return text
+    warn("No summary found.")
+    return ""
+
+
+def _get_image(soup, url, images_selector, *, remove_if=lambda e: False):
+    elems = soup.find_all(True)
+    candidates = soup.select(images_selector)
+    candidates.sort(key=elems.index)
+    for candidate in candidates:
+        if not remove_if(candidate):
+            if "data-src" in candidate.attrs:
+                src = candidate.get("data-src")
+            elif "src" in candidate.attrs:
+                src = candidate.get("src")
+            if not src.startswith("data:") and not src.endswith(".gif"):
+                return urljoin(url, src)
+    return None
+
+
 class LeMondeNewsSource(NewsSource):
     def __init__(self):
         super(LeMondeNewsSource, self).__init__(
@@ -72,46 +125,24 @@ class LeMondeNewsSource(NewsSource):
     def get_article(self, source, url):
         soup = BeautifulSoup(source, "html5lib")
 
-        title = soup.title.string
-        if "|" in title:
-            title = title[:title.find("|")]
-        title = title.strip()
+        title = _get_title(soup, "|")
 
-        container = soup.select_one("#articleBody, "
-                                    "div.entry-content, "
-                                    "div.container_18 div.grid_12, "
-                                    ".content-article-body, "
-                                    ".texte")
-        summary = ""
-        for child in container.children:
-            if not isinstance(child, NavigableString) and \
-               (child.name.startswith("h") or child.name == "p") and \
-               ("class" not in child.attrs or "txt_gris_moyen" not in child.attrs["class"]):
-                summary = child.get_text().strip()
-                if summary and summary not in ("Reportage", "En images"):
-                    break
+        summary = _get_summary(
+            soup,
+            "#articleBody h2, #articleBody p, "
+            "div.entry-content h2, div.entry-content p, "
+            ".container_18 .grid_12 > h2, .container_18 .grid_12 > p, "
+            ".content-article-body h2, .content-article-body p, "
+            ".texte h2, .texte p",
+            remove_if=lambda e: _has_class_r(e, "txt_gris_moyen"))
 
-        image = soup.select_one("#articleBody img, "
-                                ".entry-content img, "
-                                ".content-article-body img, "
-                                ".texte img")
-        if image:
-            has_bad_parent = False
-            for parent in image.parents:
-                has_bad_parent = ("class" in parent.attrs and
-                                  "wp-socializer" in parent["class"])
-                if has_bad_parent:
-                    break
-            
-            if has_bad_parent:
-                image = None
-            else:
-                src = image.get("src")
-                if src.startswith("data:"):
-                    src = image.get("data-src")
-                image = urljoin(url, src)
-        else:
-            image = None
+        image = _get_image(
+            soup, url,
+            "#articleBody img, "
+            ".entry-content img, "
+            ".content-article-body img, "
+            ".texte img",
+            remove_if=lambda e: _has_class_r(e, "wp-socializer"))
 
         return NewsItem(title, summary, image, url)
 
@@ -140,41 +171,42 @@ class DerStandardNewsSorce(NewsSource):
     def get_article(self, source, url):
         soup = BeautifulSoup(source, "html5lib")
 
-        title = soup.h1.text.strip()
+        title = _get_title(soup, (" - ", " ["))
 
-        summary = soup.select_one("#content-main h2, "
-                                  "div.copytext h3, "
-                                  "#objectContent .copytext p") \
-                      .get_text().strip()
+        summary = _get_summary(
+            soup,
+            "#content-main h2, "
+            "div.copytext h3, "
+            "#objectContent .copytext p")
 
         if soup.select_one(".liveticker"):
             image = None
         else:
-            image = soup.select_one("#objectContent img")
-            if image:
-                image = urljoin(url, image.get("src"))
-            else:
-                image = None
+            image = _get_image(soup, url, "#objectContent img")
 
         return NewsItem(title, summary, image, url)
 
 
 class DiePresseNewsSource(NewsSource):
-    def __init__(self):
+    def __init__(self, ressort=None, ressort_url=None):
+        id_suffix = ("-" + ressort.lower()) if ressort else ""
+        url_suffix = ("home/" + (ressort_url or ressort.lower())) if ressort else ""
+        name_suffix = (": " + ressort) if ressort else ""
         super(DiePresseNewsSource, self).__init__(
-            "diepresse", None,
-            "http://diepresse.com/",
-            "DiePresse.com",
-            "de-AT")
+              "diepresse" + id_suffix, "diepresse" if ressort else None,
+              "http://diepresse.com/" + url_suffix,
+              "DiePresse.com" + name_suffix,
+              "de-AT")
 
     def get_articles(self, source):
         soup = BeautifulSoup(source, "html5lib")
         elems = soup.find_all(True)
-        links = soup.select("#maincontent h2 a, #content h3 a")
+        links = soup.select("#content h2 a, #content h3 a")
         links.sort(key=elems.index)
         links = (urljoin(self.base_url, link.get("href"))
                  for link
-                 in links)
+                 in links
+                 if link.get("href") != "#")
         links = ((link[:link.find("?")] if "?" in link else link)
                  for link
                  in links)
@@ -183,25 +215,23 @@ class DiePresseNewsSource(NewsSource):
     def get_article(self, source, url):
         soup = BeautifulSoup(source, "html5lib")
 
-        title = soup.select_one("#maincontent h1, "
-                                "h1.hed").get_text().strip()
+        title = _get_title(soup, " « ")
 
-        summary = soup.select_one(".articlelead, .diatext")
-        if not summary:
-            summary = soup.select(".pictext p")
-            for elem in summary:
-                if elem.get_text().strip():
-                    summary = elem
-                    break
-        summary = summary.get_text().strip()
+        summary = _get_summary(
+            soup,
+            ".articlelead, "
+            ".diatext, "
+            ".pictext p, "
+            "legend, "
+            "div.content")
 
-        image = soup.select_one("img.articleimg, "
-                                ".gallery_preview img, "
-                                ".picfield img")
-        if image:
-            image = urljoin(url, image.get("src"))
-        else:
-            image = None
+        image = _get_image(
+            soup, url,
+            "img.articleimg, "
+            ".gallery_preview img, "
+            ".picfield img, "
+            "fieldset img, "
+            ".fl a > img")
 
         return NewsItem(title, summary, image, url)
 
@@ -225,41 +255,42 @@ class SueddeutscheNewsSource(NewsSource):
     def get_article(self, source, url):
         soup = BeautifulSoup(source, "html5lib")
 
-        title = soup.select_one("h2, span.app-type").get_text().strip()
-        prefix = soup.select_one("h2 strong")
-        if prefix:
-            prefix = prefix.get_text().strip()
-        else:
-            prefix = ""
-        title = title[len(prefix):].strip()
+        title = _get_title(soup, " - ")
 
-        summary = soup.select_one("#article-body > p, "
-                                  ".app-content p, "
-                                  ".entry-summary")
-        summary = summary.get_text().strip()
+        summary = _get_summary(
+            soup,
+            "#article-body > p, "
+            ".app-content p, "
+            ".entry-summary")
 
-        image = soup.select_one("#sitecontent img, "
-                                ".content .image img, "
-                                ".teaser-image img")
-        if image:
-            if "data-src" in image.attrs:
-                image.attrs["src"] = image.attrs["data-src"]
-            image = urljoin(url, image.get("src"))
-        else:
-            image = None
+        image = _get_image(
+            soup, url,
+            "#sitecontent img, "
+            ".content .image img, "
+            ".teaser-image img")
 
         return NewsItem(title, summary, image, url)
 
 
 def _make_sources():
     yield LeMondeNewsSource()
+    yield SueddeutscheNewsSource()
+
     yield DerStandardNewsSorce()
     for ressort in ("International", "Inland", "Wirtschaft", "Web", "Sport",
                     "Panorama", "Etat", "Kultur", "Wissenschaft", "Gesundheit",
                     "Bildung", "Reisen", "Lifestyle", "Familie"):
         yield DerStandardNewsSorce(ressort)
+    
     yield DiePresseNewsSource()
-    yield SueddeutscheNewsSource()
+    for ressort in ("Politik", "Wirtschaft", ("Geld", "meingeld"), "Panorama",
+                    "Kultur", ("Tech", "techscience"), "Sport", "Motor",
+                    "Leben", "Bildung", ("Zeitreise", "zeitgeschichte"),
+                    ("Wissen", "science"), "Recht"):
+        if isinstance(ressort, tuple):
+            yield DiePresseNewsSource(*ressort)
+        else:
+            yield DiePresseNewsSource(ressort)
 
 
 NEWS_SOURCES = tuple(_make_sources())
