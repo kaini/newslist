@@ -120,6 +120,7 @@ def fetch_image(repo, url, target):
         return
     try:
         i = Image.open(BytesIO(r.content))
+        i = i.convert("RGB")
         i.save(os.path.join(repo, target + ".jpg"), 'jpeg', optimize=True)
     except Exception:
         pass

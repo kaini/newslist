@@ -32,6 +32,24 @@ class TestSources(unittest.TestCase):
         self.assertEqual(result.image_url, "http://s2.lemde.fr/image/2016/02/01/534x0/4857146_4_214a_le-premier-ministre-belge-charles-michel-le-27_c269d14b5aaf17ab2c0d9c4a6999476b.jpg")
         self.assertRegex(result.summary, "^Les responsables.*du Monde.$")
 
+    def test_get_article_lemonde_normal2(self):
+        with open("newslist/fixtures/lemonde_article_normal2.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeMondeNewsSource().get_article(source, "http://bigbrowser.blog.lemonde.fr/2016/02/09/les-cinq-commandements-de-linternet/")
+
+        self.assertEqual(result.title, "Les 5 commandements pour un Internet plus sûr")
+        self.assertEqual(result.image_url, "http://bigbrowser.blog.lemonde.fr/files/2016/02/1212-530x267.png")
+        self.assertRegex(result.summary, "^Mardi 9.*combats..$")
+
+    def test_get_article_lemonde_normal3(self):
+        with open("newslist/fixtures/lemonde_article_normal3.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeMondeNewsSource().get_article(source, "http://bigbrowser.blog.lemonde.fr/2016/02/09/les-cinq-commandements-de-linternet/")
+
+        self.assertEqual(result.title, "Alain Juppé en position de force avant la primaire et la présidentielle")
+        self.assertEqual(result.image_url, "http://s2.lemde.fr/image/2016/02/09/534x0/4861991_7_e152_2016-02-09-ea7d2bb-27904-1jlah20_10af72ca376a8904efbb1c955b6f3ae3.png")
+        self.assertRegex(result.summary, "^L’enquête.*suivront.$")
+
     def test_get_article_lemonde_decodeurs(self):
         with open("newslist/fixtures/lemonde_article_decodeurs.html", "r", encoding="utf-8") as fp:
             source = fp.read()

@@ -133,10 +133,11 @@ class LeMondeNewsSource(NewsSource):
         summary = _get_summary(
             soup, url,
             "#articleBody h2, #articleBody p, "
-            "div.entry-content h2, div.entry-content p, "
+            "div.entry-content > h2, div.entry-content > p, "
             ".container_18 .grid_12 > h2, .container_18 .grid_12 > p, "
             ".content-article-body h2, .content-article-body p, "
-            ".texte h2, .texte p",
+            ".texte h2, .texte p, "
+            ".container-inner-texte h2, .container-inner-texte p",
             remove_if=lambda e: _has_class_r(e, "txt_gris_moyen"))
 
         image = _get_image(
