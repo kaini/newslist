@@ -279,20 +279,20 @@ def _make_sources():
     yield SueddeutscheNewsSource()
 
     yield DerStandardNewsSorce()
-    for ressort in ("International", "Inland", "Wirtschaft", "Web", "Sport",
-                    "Panorama", "Etat", "Kultur", "Wissenschaft", "Gesundheit",
-                    "Bildung", "Reisen", "Lifestyle", "Familie"):
-        yield DerStandardNewsSorce(ressort)
+    #for ressort in ("International", "Inland", "Wirtschaft", "Web", "Sport",
+    #                "Panorama", "Etat", "Kultur", "Wissenschaft", "Gesundheit",
+    #                "Bildung", "Reisen", "Lifestyle", "Familie"):
+    #    yield DerStandardNewsSorce(ressort)
     
     yield DiePresseNewsSource()
-    for ressort in ("Politik", "Wirtschaft", ("Geld", "meingeld"), "Panorama",
-                    "Kultur", ("Tech", "techscience"), "Sport", "Motor",
-                    "Leben", "Bildung", ("Zeitreise", "zeitgeschichte"),
-                    ("Wissen", "science"), "Recht"):
-        if isinstance(ressort, tuple):
-            yield DiePresseNewsSource(*ressort)
-        else:
-            yield DiePresseNewsSource(ressort)
+    #for ressort in ("Politik", "Wirtschaft", ("Geld", "meingeld"), "Panorama",
+    #                "Kultur", ("Tech", "techscience"), "Sport", "Motor",
+    #                "Leben", "Bildung", ("Zeitreise", "zeitgeschichte"),
+    #                ("Wissen", "science"), "Recht"):
+    #    if isinstance(ressort, tuple):
+    #        yield DiePresseNewsSource(*ressort)
+    #    else:
+    #        yield DiePresseNewsSource(ressort)
 
 
 NEWS_SOURCES = tuple(_make_sources())
