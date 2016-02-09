@@ -269,7 +269,7 @@ class SueddeutscheNewsSource(NewsSource):
             "#sitecontent img, "
             ".content .image img, "
             ".teaser-image img",
-            remove_if=lambda e: _has_class_r(e, "Embed"))
+            remove_if=lambda e: _has_class_r(e, "Embed") or _has_class_r(e, "authors"))
 
         return NewsItem(title, summary, image, url)
 
