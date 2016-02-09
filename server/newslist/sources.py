@@ -74,7 +74,10 @@ def _get_summary(soup, url, candidates_selector, *, remove_if=lambda e: False):
     candidates.sort(key=elems.index)
     for candidate in candidates:
         if not remove_if(candidate):
-            text = candidate.get_text(" ", strip=True)
+            text = ""
+            for text_piece in candidate.strings:
+                text += text_piece
+            text = text.strip()
             if text:
                 return text
     warn("No summary found: " + url)
