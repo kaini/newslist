@@ -68,7 +68,7 @@ def _get_title(soup, sep=()):
     return title.strip()
 
 
-def _get_summary(soup, candidates_selector, *, remove_if=lambda e: False):
+def _get_summary(soup, url, candidates_selector, *, remove_if=lambda e: False):
     elems = soup.find_all(True)
     candidates = soup.select(candidates_selector)
     candidates.sort(key=elems.index)
@@ -77,7 +77,7 @@ def _get_summary(soup, candidates_selector, *, remove_if=lambda e: False):
             text = candidate.get_text(" ", strip=True)
             if text:
                 return text
-    warn("No summary found.")
+    warn("No summary found: " + url)
     return ""
 
 
@@ -128,7 +128,7 @@ class LeMondeNewsSource(NewsSource):
         title = _get_title(soup, "|")
 
         summary = _get_summary(
-            soup,
+            soup, url,
             "#articleBody h2, #articleBody p, "
             "div.entry-content h2, div.entry-content p, "
             ".container_18 .grid_12 > h2, .container_18 .grid_12 > p, "
@@ -174,7 +174,7 @@ class DerStandardNewsSorce(NewsSource):
         title = _get_title(soup, (" - ", " ["))
 
         summary = _get_summary(
-            soup,
+            soup, url,
             "#content-main h2, "
             "div.copytext h3, "
             "#objectContent .copytext p")
@@ -218,7 +218,7 @@ class DiePresseNewsSource(NewsSource):
         title = _get_title(soup, " « ")
 
         summary = _get_summary(
-            soup,
+            soup, url,
             ".articlelead, "
             ".diatext, "
             ".pictext p, "
@@ -258,16 +258,18 @@ class SueddeutscheNewsSource(NewsSource):
         title = _get_title(soup, " - ")
 
         summary = _get_summary(
-            soup,
+            soup, url,
             "#article-body > p, "
             ".app-content p, "
-            ".entry-summary")
+            ".entry-summary",
+            remove_if=lambda e: _has_class_r(e, "Embed"))
 
         image = _get_image(
             soup, url,
             "#sitecontent img, "
             ".content .image img, "
-            ".teaser-image img")
+            ".teaser-image img",
+            remove_if=lambda e: _has_class_r(e, "Embed"))
 
         return NewsItem(title, summary, image, url)
 
