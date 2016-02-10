@@ -1,5 +1,6 @@
 from newslist.sources import LeMondeNewsSource, DerStandardNewsSorce, \
-                             DiePresseNewsSource, SueddeutscheNewsSource
+                             DiePresseNewsSource, SueddeutscheNewsSource, \
+                             LeFigaroNewsSource
 import unittest
 import os
 
@@ -302,3 +303,97 @@ class TestSources(unittest.TestCase):
         self.assertEqual(result.title, "Reisequiz der Woche: Amsterdam")
         self.assertEqual(result.image_url, "http://quiz.sueddeutsche.de/upload/9964/7666/Tulpen_Reuters_560.jpg")
         self.assertRegex(result.summary, "^Gibt es.*sieben Fragen.$")
+
+    def test_get_articles_lefigaro(self):
+        with open("newslist/fixtures/lefigaro_index.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeFigaroNewsSource().get_articles(source)
+
+        self.assertEqual(len(result), 53)
+        self.assertEqual(result[0], "http://www.lefigaro.fr/politique/2016/02/09/01002-20160209ARTFIG00355-decheancevalls-verrouille-les-debats.php")
+        self.assertEqual(result[2], "http://www.lefigaro.fr/politique/2016/02/09/01002-20160209ARTFIG00256-la-gauche-au-pouvoir-perd-ses-bases-et-ses-valeurs-de-reference.php")
+        self.assertEqual(result[4], "http://www.lefigaro.fr/politique/le-scan/2016/02/09/25001-20160209ARTFIG00302-remaniement-l-executif-confronte-a-une-longue-serie-de-refus-publiquement-affiches.php")
+        self.assertEqual(result[7], "http://www.lefigaro.fr/sciences/2016/02/09/01008-20160209ARTFIG00317-la-nasa-publie-une-image-de-la-planete-mars-en-realite-virtuelle.php")
+        self.assertEqual(result[-1], "http://www.lefigaro.fr/photos/2016/02/08/01013-20160208ARTFIG00231-24-heures-photo.php")
+    
+    def test_get_article_lefigaro_normal1(self):
+        with open("newslist/fixtures/lefigaro_article_normal1.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeFigaroNewsSource().get_article(source, "http://www.lefigaro.fr/politique/2016/02/09/01002-20160209ARTFIG00355-decheancevalls-verrouille-les-debats.php")
+
+        self.assertEqual(result.title, "La déchéance de nationalité votée à une courte majorité")
+        self.assertEqual(result.image_url, "http://i.f1g.fr/media/figaro/805x453_crop/2016/02/09/XVMe0901ccc-cf58-11e5-be88-413827e446c9.jpg")
+        self.assertRegex(result.summary, "^L'adoption.*l'exécutif.$")
+    
+    def test_get_article_lefigaro_normal2(self):
+        with open("newslist/fixtures/lefigaro_article_normal2.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeFigaroNewsSource().get_article(source, "http://www.lefigaro.fr/conjoncture/2016/02/09/20002-20160209ARTFIG00140-crise-de-l-elevage-on-se-retrouve-dans-un-cercle-vicieux-duquel-il-est-difficile-de-sortir.php")
+
+        self.assertEqual(result.title, "Crise de l'élevage : «Bruxelles n'est pas bien armée pour agir sur les prix»")
+        self.assertEqual(result.image_url, "http://i.f1g.fr/media/figaro/805x453_crop/2016/02/09/XVM04085550-cf15-11e5-be88-413827e446c9.jpg")
+        self.assertRegex(result.summary, "^INTERVIEW - Alors.*fait le point.$")
+    
+    def test_get_article_lefigaro_normal3(self):
+        with open("newslist/fixtures/lefigaro_article_normal3.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeFigaroNewsSource().get_article(source, "http://www.lefigaro.fr/medias/2016/02/09/20004-20160209ARTFIG00334-le-petit-ecran-accro-a-la-fiction-francaise.php")
+
+        self.assertEqual(result.title, "Le petit écran accro à la fiction française")
+        self.assertEqual(result.image_url, "http://i.f1g.fr/media/figaro/1280x580_crop/2016/02/09/XVMab675ade-cf3e-11e5-a1b4-fbbf1c532b16.jpg")
+        self.assertRegex(result.summary, "^Les séries.*redemandent.$")
+    
+    def test_get_article_lefigaro_normal4(self):
+        with open("newslist/fixtures/lefigaro_article_normal4.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeFigaroNewsSource().get_article(source, "http://bourse.lefigaro.fr/devises-matieres-premieres/actu-conseils/la-tempete-financiere-s-amplifie-4922290")
+
+        self.assertEqual(result.title, "La tempête financière s’amplifie")
+        self.assertEqual(result.image_url, "http://i.f1g.fr/media/ext/805x/bourse.lefigaro.fr/sites/default/files/img/2016/02/09/PHO4a233d5a-cf4e-11e5-a1b4-fbbf1c532b16-805x453.jpg")
+        self.assertRegex(result.summary, "^INFOGRAPHIE - Les.*mondial.$")
+
+    def test_get_article_lefigaro_normal5(self):
+        with open("newslist/fixtures/lefigaro_article_normal5.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeFigaroNewsSource().get_article(source, "http://etudiant.lefigaro.fr/les-news/actu/detail/article/sciences-po-malgre-les-efforts-la-cour-des-comptes-reste-inquiete-19037/")
+
+        self.assertEqual(result.title, "Sciences Po : malgré les efforts, la Cour des comptes reste inquiète")
+        self.assertEqual(result.image_url, "http://assets.etudiant.lefigaro.fr/cms/pics/PHO9f4bfb30-cfdc-11e5-9d76-214cb7166664-805x453.jpg")
+        self.assertRegex(result.summary, "^Le rapport.*particulière».$")
+
+
+    def test_get_article_lefigaro_sport(self):
+        with open("newslist/fixtures/lefigaro_article_sport.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeFigaroNewsSource().get_article(source, "http://www.lefigaro.fr/medias/2016/02/09/20004-20160209ARTFIG00334-le-petit-ecran-accro-a-la-fiction-francaise.php")
+
+        self.assertEqual(result.title, "Paris 2024 : un logo pour conquérir le monde")
+        self.assertEqual(result.image_url, "http://i.f1g.fr/media/ext/1560x624_crop/sport24.lefigaro.fr/var/plain_site/storage/images/jeux-olympiques/jo-2024/actualites/paris-2024-un-logo-pour-conquerir-le-monde-791282/19893177-2-fre-FR/Paris-2024-un-logo-pour-conquerir-le-monde.jpg")
+        self.assertRegex(result.summary, "^L’identité.*ralliement énergique.$")
+
+    def test_get_article_lefigaro_video(self):
+        with open("newslist/fixtures/lefigaro_article_video.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeFigaroNewsSource().get_article(source, "http://www.lefigaro.fr/elections-americaines/2016/02/10/01040-20160210ARTFIG00020-sanders-et-trump-domine-la-primaire-du-new-hampshire.php")
+
+        self.assertEqual(result.title, "Sanders et Trump dominent les primaires du New Hampshire")
+        self.assertEqual(result.image_url, "http://i.f1g.fr/media/figaro/805x453_crop/2016/02/10/XVM7aed7388-cfad-11e5-a066-f38098156ec4.jpg")
+        self.assertRegex(result.summary, "^VIDÉOS - Avec 60%.*mal.$")
+
+    def test_get_article_lefigaro_noimg(self):
+        with open("newslist/fixtures/lefigaro_article_noimg.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeFigaroNewsSource().get_article(source, "http://www.lefigaro.fr/flash-actu/2016/02/10/97001-20160210FILWWW00115-syrie-500-morts-a-alep-depuis-le-1er-fevrier.php")
+
+        self.assertEqual(result.title, "Syrie: 500 morts à Alep depuis le 1er février")
+        self.assertIsNone(result.image_url)
+        self.assertRegex(result.summary, "(?ms)^Plus de 500 personnes.*Alep commence$")
+    
+    def test_get_article_lefigaro_tv(self):
+        with open("newslist/fixtures/lefigaro_article_tv.html", "r", encoding="utf-8") as fp:
+            source = fp.read()
+        result = LeFigaroNewsSource().get_article(source, "http://video.lefigaro.fr/figaro/video/decheance-de-nationalite-le-texte-a-libere-la-parole-et-les-consciences/4748173364001/")
+
+        self.assertEqual(result.title, "Déchéance de nationalité : «Le texte a libéré la parole et les consciences»")
+        self.assertIsNone(result.image_url)
+        self.assertRegex(result.summary, "^De Christiane.*Albert Zennou.$")

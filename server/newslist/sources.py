@@ -57,14 +57,29 @@ def _has_class_r(elem, class_name):
     return False
 
 
-def _get_title(soup, sep=()):
-    if not isinstance(sep, tuple):
-        sep = (sep,)
-
+def _get_title(soup, seps=()):
+    """
+    soup: The tag soup
+    sep: An iterable of (str, int) pairs that describe the maximum number
+         of times the string until str will be removed. If the int is negative
+         the removal will work from end-to-begin of the string otherwise from
+         begin-to-end.
+    """
     title = soup.title.get_text()
-    for s in sep:
-        if title.find(s) >= 0:
-            title = title[:title.find(s)]
+    for (sep, num) in seps:
+        for i in range(abs(num)):
+            if num < 0:
+                index = title.rfind(sep)
+                if index != -1:
+                    title = title[:index]
+                else:
+                    break
+            else:
+                index = title.find(sep)
+                if index != -1:
+                    title = title[index + len(sep):]
+                else:
+                    break
     return title.strip()
 
 
@@ -92,8 +107,12 @@ def _get_image(soup, url, images_selector, *, remove_if=lambda e: False):
         if not remove_if(candidate):
             if "data-src" in candidate.attrs:
                 src = candidate.get("data-src")
+            elif "srcset" in candidate.attrs:
+                src = candidate.get("srcset")
             elif "src" in candidate.attrs:
                 src = candidate.get("src")
+            if " " in src:
+                src = src[:src.find(" ")]
             if not src.startswith("data:") and not src.endswith(".gif"):
                 return urljoin(url, src)
     return None
@@ -128,7 +147,7 @@ class LeMondeNewsSource(NewsSource):
     def get_article(self, source, url):
         soup = BeautifulSoup(source, "html5lib")
 
-        title = _get_title(soup, "|")
+        title = _get_title(soup, (("|", -1),))
 
         summary = _get_summary(
             soup, url,
@@ -175,7 +194,7 @@ class DerStandardNewsSorce(NewsSource):
     def get_article(self, source, url):
         soup = BeautifulSoup(source, "html5lib")
 
-        title = _get_title(soup, (" - ", " ["))
+        title = _get_title(soup, ((" - ", -2), (" [", -1)))
 
         summary = _get_summary(
             soup, url,
@@ -219,7 +238,7 @@ class DiePresseNewsSource(NewsSource):
     def get_article(self, source, url):
         soup = BeautifulSoup(source, "html5lib")
 
-        title = _get_title(soup, " « ")
+        title = _get_title(soup, ((" « ", -4),))
 
         summary = _get_summary(
             soup, url,
@@ -259,7 +278,7 @@ class SueddeutscheNewsSource(NewsSource):
     def get_article(self, source, url):
         soup = BeautifulSoup(source, "html5lib")
 
-        title = _get_title(soup, " - ")
+        title = _get_title(soup, ((" - ", -2),))
 
         summary = _get_summary(
             soup, url,
@@ -278,17 +297,60 @@ class SueddeutscheNewsSource(NewsSource):
         return NewsItem(title, summary, image, url)
 
 
+class LeFigaroNewsSource(NewsSource):
+    def __init__(self):
+        super(LeFigaroNewsSource, self).__init__(
+            "lefigaro", None,
+            "http://www.lefigaro.fr/",
+            "Le Figaro",
+            "fr-FR")
+
+    def get_articles(self, source):
+        soup = BeautifulSoup(source, "html5lib")
+        return [urljoin(self.base_url, link.get("href"))
+                for link
+                in soup.select(".fig-main-col h2 a")
+                if not _has_class_r(link, "fig-promo")]
+
+    def get_article(self, source, url):
+        soup = BeautifulSoup(source, "html5lib")
+
+        title = _get_title(soup, ((" - ", -2),))
+
+        summary = _get_summary(
+            soup, url,
+            ".fig-main-col > p, .fig-main-col div > p, "
+            ".s24-art__content > p, .s24-art__content div > p, "
+            ".main-txt > p, "
+            ".article-content .field-item, "
+            ".fig-article-body, "
+            ".vdo-clip-txt",
+            remove_if=lambda e: _has_class_r(e, "fig-main-media"))
+
+        image = _get_image(
+            soup, url,
+            ".fig-article-body img, "
+            ".fig-main-media img, "
+            ".article-img img, "
+            ".main-img img, "
+            "picture source, picture img, "
+            ".article-content figure img")
+
+        return NewsItem(title, summary, image, url)
+
+
 def _make_sources():
     yield LeMondeNewsSource()
     yield SueddeutscheNewsSource()
-
+    yield DiePresseNewsSource()
     yield DerStandardNewsSorce()
+    yield LeFigaroNewsSource()
+
     #for ressort in ("International", "Inland", "Wirtschaft", "Web", "Sport",
     #                "Panorama", "Etat", "Kultur", "Wissenschaft", "Gesundheit",
     #                "Bildung", "Reisen", "Lifestyle", "Familie"):
     #    yield DerStandardNewsSorce(ressort)
     
-    yield DiePresseNewsSource()
     #for ressort in ("Politik", "Wirtschaft", ("Geld", "meingeld"), "Panorama",
     #                "Kultur", ("Tech", "techscience"), "Sport", "Motor",
     #                "Leben", "Bildung", ("Zeitreise", "zeitgeschichte"),
@@ -299,4 +361,4 @@ def _make_sources():
     #        yield DiePresseNewsSource(ressort)
 
 
-NEWS_SOURCES = tuple(_make_sources())
+NEWS_SOURCES = tuple(sorted(_make_sources(), key=lambda o: o.name.lower()))

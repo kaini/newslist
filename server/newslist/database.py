@@ -7,6 +7,7 @@ import pickle
 from newslist.sources import NEWS_SOURCES
 from PIL import Image
 from io import BytesIO
+from warnings import warn
 
 
 class _MyJSONEncoder(json.JSONEncoder):
@@ -109,6 +110,7 @@ def fetch_articles(source):
 
 def fetch_article(source, article_url):
     r = requests.get(article_url)
+    r.encoding = "UTF-8"
     if r.status_code != 200:
         raise Exception("HTTP " + r.status_code)
     return source.get_article(r.text, article_url)
@@ -117,13 +119,15 @@ def fetch_article(source, article_url):
 def fetch_image(repo, url, target):
     r = requests.get(url)
     if r.status_code != 200:
+        warn("Could not fetch image: " + url)
         return
     try:
         i = Image.open(BytesIO(r.content))
         i = i.convert("RGB")
         i.save(os.path.join(repo, target + ".jpg"), 'jpeg', optimize=True)
     except Exception:
-        pass
+        print(url, file=sys.stderr)
+        traceback.print_exc()
 
 
 def cleanup(repo):
