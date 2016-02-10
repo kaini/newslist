@@ -123,7 +123,7 @@ class LeMondeNewsSource(NewsSource):
         super(LeMondeNewsSource, self).__init__(
             "lemonde", None,
             "http://www.lemonde.fr/",
-            "LeMonde.fr",
+            "Le Monde",
             "fr-FR")
 
     def get_articles(self, source):
@@ -178,7 +178,7 @@ class DerStandardNewsSorce(NewsSource):
         super(DerStandardNewsSorce, self).__init__(
             "derstandard" + id_suffix, "derstandard" if ressort else None,
             "http://derstandard.at/" + url_suffix,
-            "derStandard.at" + name_suffix,
+            "Der Standard" + name_suffix,
             "de-AT")
 
     def get_articles(self, source):
@@ -218,7 +218,7 @@ class DiePresseNewsSource(NewsSource):
         super(DiePresseNewsSource, self).__init__(
               "diepresse" + id_suffix, "diepresse" if ressort else None,
               "http://diepresse.com/" + url_suffix,
-              "DiePresse.com" + name_suffix,
+              "Die Presse" + name_suffix,
               "de-AT")
 
     def get_articles(self, source):
